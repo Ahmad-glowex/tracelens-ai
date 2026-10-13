@@ -7,8 +7,8 @@
 const PROVIDERS = {
   groq: {
     name: 'Groq LPUs',
-    defaultModel: 'llama-3.3-70b-versatile',
-    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+    defaultModel: 'qwen/qwen3.8-27b',
+    models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile'],
     keyLink: 'https://console.groq.com/keys',
     keyHint: 'Groq LPUs deliver 500+ tok/sec inference. 100% free with no credit card required.',
     badge: 'Ultra-Fast Free Tier'
@@ -28,8 +28,8 @@ const PROVIDERS = {
   },
   gemini: {
     name: 'Google Gemini',
-    defaultModel: 'gemini-1.5-flash',
-    models: ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+    defaultModel: 'gemini-3.8-flash',
+    models: ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-pro'],
     keyLink: 'https://aistudio.google.com/app/apikey',
     keyHint: 'Google AI Studio free tier provides 15 RPM with 1M context window.',
     badge: 'Direct Google API'
@@ -616,13 +616,36 @@ async function runDiagnosis() {
         ? `Connecting to Built-in ${PROVIDERS[provider]?.name || provider}...` 
         : `Connecting to ${PROVIDERS[provider]?.name || provider}...`;
 
-      const result = await dispatchUniversalAI({
-        provider,
-        model,
-        apiKey,
-        customUrl,
-        log: rawLog
-      });
+      let result;
+      try {
+        result = await dispatchUniversalAI({
+          provider,
+          model,
+          apiKey,
+          customUrl,
+          log: rawLog
+        });
+      } catch (primaryErr) {
+        // Automatic failover: If built-in primary fails, try built-in secondary fallback
+        if (!userApiKey && defaultConfig.fallbackApiKey) {
+          console.warn('Primary provider error, failing over to secondary provider...', primaryErr);
+          const fallbackProv = defaultConfig.fallbackProvider || 'gemini';
+          const fallbackMod = defaultConfig.fallbackModel || 'gemini-3.8-flash';
+          inferencePill.textContent = `Failing over to ${PROVIDERS[fallbackProv]?.name || fallbackProv}...`;
+          
+          result = await dispatchUniversalAI({
+            provider: fallbackProv,
+            model: fallbackMod,
+            apiKey: defaultConfig.fallbackApiKey,
+            customUrl,
+            log: rawLog
+          });
+          provider = fallbackProv;
+          model = fallbackMod;
+        } else {
+          throw primaryErr;
+        }
+      }
 
       const latency = Math.round(performance.now() - startTime);
       rootCauseText.textContent = result.rootCause || 'Root cause identified.';
