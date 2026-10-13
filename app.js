@@ -579,15 +579,43 @@ async function runDiagnosis() {
 
   const startTime = performance.now();
 
-  const provider = localStorage.getItem('tracelens_provider') || 'groq';
-  const model = localStorage.getItem('tracelens_model') || PROVIDERS[provider].defaultModel;
-  const apiKey = localStorage.getItem('tracelens_api_key');
-  const customUrl = localStorage.getItem('tracelens_custom_url') || 'http://localhost:11434/v1';
+  // Check user custom key from localStorage first; if not present, seamlessly use TRACELENS_CONFIG.defaultApiKey
+  const userApiKey = localStorage.getItem('tracelens_api_key');
+  const userProvider = localStorage.getItem('tracelens_provider');
+  const userModel = localStorage.getItem('tracelens_model');
+  const userCustomUrl = localStorage.getItem('tracelens_custom_url');
 
-  // If user has provided a real key or is using local custom endpoint
+  const defaultConfig = window.TRACELENS_CONFIG || {};
+  const defaultKey = defaultConfig.defaultApiKey ? defaultConfig.defaultApiKey.trim() : '';
+
+  let provider, model, apiKey, customUrl;
+
+  if (userApiKey) {
+    apiKey = userApiKey;
+    provider = userProvider || 'groq';
+    model = userModel || (PROVIDERS[provider] ? PROVIDERS[provider].defaultModel : 'llama-3.3-70b-versatile');
+    customUrl = userCustomUrl || 'http://localhost:11434/v1';
+  } else if (defaultKey) {
+    // Seamless built-in real AI dispatch
+    apiKey = defaultKey;
+    provider = defaultConfig.defaultProvider || 'groq';
+    model = defaultConfig.defaultModel || (PROVIDERS[provider] ? PROVIDERS[provider].defaultModel : 'llama-3.3-70b-versatile');
+    customUrl = 'http://localhost:11434/v1';
+  } else {
+    apiKey = null;
+    provider = userProvider || 'groq';
+    model = userModel || (PROVIDERS[provider] ? PROVIDERS[provider].defaultModel : 'llama-3.3-70b-versatile');
+    customUrl = userCustomUrl || 'http://localhost:11434/v1';
+  }
+
+  // If we have an active key (User key OR Built-in default key) or is using local custom endpoint
   if (apiKey || provider === 'custom') {
     try {
-      inferencePill.textContent = `Connecting to ${PROVIDERS[provider].name}...`;
+      const isDefault = !userApiKey && defaultKey;
+      inferencePill.textContent = isDefault 
+        ? `Connecting to Built-in ${PROVIDERS[provider]?.name || provider}...` 
+        : `Connecting to ${PROVIDERS[provider]?.name || provider}...`;
+
       const result = await dispatchUniversalAI({
         provider,
         model,
@@ -601,25 +629,24 @@ async function runDiagnosis() {
       diffFileTarget.textContent = result.targetFile || 'detected_patch.diff';
       renderDiff(result.diff || `@@ -1,3 +1,3 @@\n-// Verified fix\n+// Auto-applied`);
 
-      inferencePill.textContent = `${latency}ms • ${PROVIDERS[provider].name} (${model.split('/').pop()})`;
+      const sourceLabel = isDefault ? ' (Built-in Free)' : '';
+      inferencePill.textContent = `${latency}ms • ${PROVIDERS[provider]?.name || provider} (${model.split('/').pop()})${sourceLabel}`;
       showToast('Live AI diagnosis complete!');
     } catch (err) {
       console.error('Real API dispatch error:', err);
-      alert(`API Error: ${err.message}\n\nFalling back to high-accuracy offline simulator.`);
+      showToast(`API Notice: ${err.message || 'Call failed'}`);
       fallbackSimulation(startTime);
     }
   } else {
-    // If no API key is provided
-    // Check if input matches one of our preset samples
+    // Neither user key nor built-in default key is set
     const sample = SAMPLES[currentPreset];
     const isSample = sample && rawLog.includes(sample.input.substring(0, 30));
 
     if (isSample) {
       fallbackSimulation(startTime);
     } else {
-      // User entered a custom error with NO API key configured
       const wantsConfig = confirm(
-        '⚡ No API Key Configured!\n\nTraceLens requires an API Key (Groq or OpenRouter provide 100% FREE keys) to analyze custom stack traces in real time.\n\nWould you like to open the Model Settings modal now to configure your free key?'
+        '⚡ Built-in API key is being initialized!\n\nTo analyze custom stack traces right away, you can also paste your free Groq or Gemini API key in 10 seconds.\n\nWould you like to open the Model Settings modal now?'
       );
       if (wantsConfig) {
         openSettings();
