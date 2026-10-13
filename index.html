@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TraceLens AI — Turn Raw Stack Traces into Instant Fixes & Git Diffs</title>
+  <meta name="description" content="AI-powered developer productivity tool. Paste terminal crashes, runtime exceptions, or Docker errors and get precision Git diffs in milliseconds.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+            },
+            dark: {
+              bg: '#08080b',
+              surface: '#0f0f14',
+              elevated: '#16161f',
+              border: '#232330',
+              hover: '#2e2e40'
+            }
+          },
+          animation: {
+            'glow-pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar': 'radar 4s linear infinite',
+          },
+          keyframes: {
+            radar: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Silicon Valley subtle glow styling */
+    body {
+      background-color: #08080b;
+      color: #f3f4f6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    .bg-grid-pattern {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    }
+
+    .radial-glow {
+      background: radial-gradient(circle 600px at 50% -100px, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.05), transparent 70%);
+    }
+
+    .glass-card {
+      background: rgba(15, 15, 20, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    /* Custom Code Scrollbars */
+    pre::-webkit-scrollbar, textarea::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    pre::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb {
+      background: #2e2e40;
+      border-radius: 4px;
+    }
+    pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover {
+      background: #4b4b66;
+    }
+  </style>
+</head>
+<body class="min-h-screen selection:bg-brand-500/30 selection:text-brand-400 font-sans antialiased relative overflow-x-hidden">
+
+  <!-- Background Gradients -->
+  <div class="fixed inset-0 bg-grid-pattern pointer-events-none z-0"></div>
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[600px] radial-glow pointer-events-none z-0"></div>
+
+  <!-- Navigation Bar -->
+  <nav class="sticky top-0 z-50 border-b border-dark-border/80 bg-dark-bg/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <a href="index.html" class="flex items-center space-x-2.5 group">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-cyan p-0.5 shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-all duration-300">
+            <div class="w-full h-full bg-dark-bg rounded-[10px] flex items-center justify-center">
+              <i data-lucide="zap" class="w-5 h-5 text-brand-400 group-hover:scale-110 transition-transform"></i>
+            </div>
+          </div>
+          <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+            TraceLens<span class="text-brand-400 text-sm ml-1 font-mono px-1.5 py-0.5 rounded bg-brand-500/10 border border-brand-500/20">AI</span>
+          </span>
+        </a>
+      </div>
+
+      <!-- Links -->
+      <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
+        <a href="#playground" class="hover:text-white transition-colors">Interactive Sandbox</a>
+        <a href="#features" class="hover:text-white transition-colors">Features</a>
+        <a href="#architecture" class="hover:text-white transition-colors">Architecture</a>
+        <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+        <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="hover:text-white transition-colors flex items-center space-x-1.5">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-3">
+        <button id="open-settings-btn" class="p-2 text-zinc-400 hover:text-white hover:bg-dark-elevated rounded-lg border border-transparent hover:border-dark-border transition-all" title="Configure API Keys (Groq / Gemini)">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+        <a href="#playground" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-500 to-emerald-600 hover:from-brand-400 hover:to-emerald-500 text-zinc-950 font-mono shadow-md shadow-brand-500/25 hover:shadow-brand-500/40 transition-all">
+          Launch Sandbox
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative z-10 pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+    <!-- Top Announcement Pill -->
+    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-dark-surface border border-brand-500/30 text-zinc-300 shadow-sm shadow-brand-500/10 mb-8 animate-fade-in">
+      <span class="flex h-2 w-2 rounded-full bg-brand-400 animate-ping"></span>
+      <span class="font-semibold text-brand-400">TraceLens v1.0 Live</span>
+      <span class="text-zinc-600">•</span>
+      <span class="text-zinc-400">Zero-latency root cause triage</span>
+    </div>
+
+    <!-- Main Headline -->
+    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.1] mb-6">
+      Turn raw stack traces into <br class="hidden sm:inline" />
+      <span class="bg-gradient-to-r from-brand-400 via-accent-cyan to-accent-violet bg-clip-text text-transparent">
+        instant fixes & Git diffs.
+      </span>
+    </h1>
+
+    <!-- Subheadline -->
+    <p class="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+      Don't let cryptic runtime crashes, segfaults, or Docker exit codes halt your sprint. TraceLens pinpoints the precise root cause and delivers production-ready Git diffs in milliseconds.
+    </p>
+
+    <!-- Hero CTA Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+      <a href="#playground" class="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-sm text-zinc-950 bg-brand-400 hover:bg-brand-500 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-200 flex items-center justify-center space-x-2 font-mono">
+        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+        <span>Try Interactive Sandbox</span>
+      </a>
+      <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-sm text-zinc-300 hover:text-white bg-dark-surface hover:bg-dark-elevated border border-dark-border hover:border-zinc-700 transition-all duration-200 flex items-center justify-center space-x-2">
+        <i data-lucide="github" class="w-4 h-4"></i>
+        <span>Star on GitHub</span>
+      </a>
+    </div>
+
+    <!-- Trusted By / Stack Badges -->
+    <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-500 font-mono uppercase tracking-wider">
+      <div class="flex items-center space-x-1.5">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>Groq 300+ tok/s</span>
+      </div>
+      <span>•</span>
+      <div class="flex items-center space-x-1.5">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-accent-cyan"></i>
+        <span>Gemini 1.5 Flash</span>
+      </div>
+      <span>•</span>
+      <div class="flex items-center space-x-1.5">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span>Zero Code Telemetry</span>
+      </div>
+      <span>•</span>
+      <div class="flex items-center space-x-1.5">
+        <i data-lucide="terminal" class="w-3.5 h-3.5 text-accent-violet"></i>
+        <span>UNIX Pipe Compatible</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Sandbox & Playground Section -->
+  <section id="playground" class="relative z-10 py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-2xl border border-dark-border">
+      
+      <!-- Sandbox Header & Quick Sample Buttons -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between pb-4 mb-4 border-b border-dark-border gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-white flex items-center space-x-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-brand-400"></span>
+            <span>Live Triage Sandbox</span>
+          </h2>
+          <p class="text-xs text-zinc-400 mt-0.5">Select a pre-loaded crash sample or paste your own terminal output</p>
+        </div>
+
+        <!-- Presets -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-zinc-500 font-mono mr-1">Presets:</span>
+          <button data-sample="node" class="preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-brand-500/40 text-brand-400 hover:bg-dark-border transition">
+            Node / TS
+          </button>
+          <button data-sample="python" class="preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-dark-border text-zinc-300 hover:text-white hover:bg-dark-border transition">
+            Python FastAPI
+          </button>
+          <button data-sample="go" class="preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-dark-border text-zinc-300 hover:text-white hover:bg-dark-border transition">
+            Go Panic
+          </button>
+          <button data-sample="docker" class="preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-dark-border text-zinc-300 hover:text-white hover:bg-dark-border transition">
+            Docker OOM 137
+          </button>
+        </div>
+      </div>
+
+      <!-- Split Screen Workbench -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+        <!-- Left: Terminal Input -->
+        <div class="flex flex-col rounded-xl bg-dark-bg border border-dark-border overflow-hidden">
+          <div class="px-4 py-2.5 bg-dark-surface border-b border-dark-border flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+              <span class="text-xs font-mono text-zinc-400 ml-2">stderr (Terminal / Test Runner)</span>
+            </div>
+            <button id="clear-input-btn" class="text-xs text-zinc-500 hover:text-zinc-300 transition">Clear</button>
+          </div>
+
+          <div class="p-3 flex-1 flex flex-col">
+            <textarea id="error-input" rows="14" class="w-full flex-1 bg-transparent text-xs font-mono text-rose-300 focus:outline-none resize-none leading-relaxed" placeholder="Paste your stack trace, compiler error, or container crash log here..."></textarea>
+          </div>
+
+          <!-- Input Footer Bar -->
+          <div class="px-4 py-3 bg-dark-surface/60 border-t border-dark-border flex items-center justify-between">
+            <div class="text-[11px] text-zinc-500 font-mono flex items-center space-x-1">
+              <i data-lucide="info" class="w-3 h-3"></i>
+              <span>Press <kbd class="px-1 py-0.5 rounded bg-dark-elevated border border-dark-border text-zinc-300">⌘+Enter</kbd> to run</span>
+            </div>
+            <button id="diagnose-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-500 hover:bg-brand-400 text-zinc-950 font-mono flex items-center space-x-2 transition shadow-lg shadow-brand-500/20">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 fill-current"></i>
+              <span id="diagnose-btn-text">Diagnose & Generate Diff</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: AI Resolution & Git Diff -->
+        <div class="flex flex-col rounded-xl bg-dark-bg border border-dark-border overflow-hidden">
+          <div class="px-4 py-2.5 bg-dark-surface border-b border-dark-border flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span id="diff-status-indicator" class="w-2.5 h-2.5 rounded-full bg-brand-400"></span>
+              <span id="diff-status-text" class="text-xs font-mono text-zinc-300">Analysis Ready</span>
+              <span id="inference-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">142ms • Groq Llama-3.3-70b</span>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <button id="copy-diff-btn" class="text-xs font-mono px-2 py-1 rounded bg-dark-elevated text-zinc-400 hover:text-white border border-dark-border transition flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span id="copy-btn-text">Copy Diff</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Diagnosis Details Card -->
+          <div class="p-3 border-b border-dark-border bg-dark-surface/30">
+            <div class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center space-x-1.5 mb-1.5">
+              <i data-lucide="microchip" class="w-3.5 h-3.5 text-accent-cyan"></i>
+              <span>Root Cause Diagnosis:</span>
+            </div>
+            <p id="root-cause-text" class="text-xs text-zinc-300 leading-relaxed font-sans bg-dark-surface/60 p-2.5 rounded-lg border border-dark-border">
+              <!-- Dynamically populated -->
+            </p>
+          </div>
+
+          <!-- Git Diff Output -->
+          <div class="p-3 flex-1 overflow-x-auto bg-[#0a0a0e]">
+            <div class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center justify-between mb-2">
+              <span class="flex items-center space-x-1.5">
+                <i data-lucide="git-commit" class="w-3.5 h-3.5 text-brand-400"></i>
+                <span>Generated Git Patch (`git apply` compatible)</span>
+              </span>
+              <span id="diff-file-target" class="text-[10px] text-zinc-500 font-mono">src/components/UserProfileList.tsx</span>
+            </div>
+            <pre id="diff-content" class="text-xs font-mono leading-relaxed whitespace-pre font-normal"></pre>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="px-4 py-3 bg-dark-surface/60 border-t border-dark-border flex items-center justify-between">
+            <span class="text-[11px] font-mono text-zinc-500">100% Valid Unified Diff</span>
+            <div class="flex items-center space-x-2">
+              <button id="quick-apply-btn" class="px-3 py-1.5 text-xs font-mono rounded bg-dark-elevated hover:bg-dark-border text-zinc-300 hover:text-white border border-dark-border transition flex items-center space-x-1.5">
+                <i data-lucide="git-pull-request" class="w-3 h-3 text-brand-400"></i>
+                <span>Create PR</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Feature Grid -->
+  <section id="features" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <h2 class="text-xs font-mono uppercase tracking-widest text-brand-400 mb-2">Engineered for Velocity</h2>
+      <p class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Everything you need to eliminate debugging fatigue.
+      </p>
+      <p class="text-zinc-400 text-sm sm:text-base mt-3">
+        Built specifically for modern polyglot engineering teams who demand precision and speed.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Card 1 -->
+      <div class="glass-card rounded-2xl p-7 flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 mb-5 group-hover:scale-105 transition-transform">
+            <i data-lucide="target" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Instant Root-Cause Analysis</h3>
+          <p class="text-zinc-400 text-sm leading-relaxed">
+            TraceLens ignores noisy framework wrappers and zeros in on the exact user-code frame causing memory leaks, undefined references, or type violations.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-dark-border/60 flex items-center text-xs font-mono text-brand-400">
+          <span>Deterministic AST mapping</span>
+          <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="glass-card rounded-2xl p-7 flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan mb-5 group-hover:scale-105 transition-transform">
+            <i data-lucide="git-merge" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Clean Git Diff Fixes</h3>
+          <p class="text-zinc-400 text-sm leading-relaxed">
+            Never copy-paste random ChatGPT paragraphs again. Receive formatted, unified Git diff patches that can be instantly piped into <code class="text-zinc-300">git apply</code> or branch commits.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-dark-border/60 flex items-center text-xs font-mono text-accent-cyan">
+          <span>Zero hallucinated syntax</span>
+          <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glass-card rounded-2xl p-7 flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-accent-violet/10 border border-accent-violet/20 flex items-center justify-center text-accent-violet mb-5 group-hover:scale-105 transition-transform">
+            <i data-lucide="zap" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Groq & Gemini Dual Engine</h3>
+          <p class="text-zinc-400 text-sm leading-relaxed">
+            Harness sub-200ms ultra-fast inference with Groq's Llama 3.3 LPUs for quick scripts, and leverage Google Gemini 1.5 Flash's 1M token context for massive multi-file stack traces.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-dark-border/60 flex items-center text-xs font-mono text-accent-violet">
+          <span>Up to 800 tok/sec output</span>
+          <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Secondary Features Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+      <div class="glass-card rounded-2xl p-6 flex items-start space-x-4">
+        <div class="p-2.5 rounded-lg bg-dark-elevated text-emerald-400 border border-dark-border shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-white mb-1">Zero Telemetry & 100% Client-Side Privacy</h4>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Your proprietary stack traces and source code snippets never hit external analytics databases. Use Bring Your Own Key (BYOK) for completely decentralized execution.
+          </p>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6 flex items-start space-x-4">
+        <div class="p-2.5 rounded-lg bg-dark-elevated text-brand-400 border border-dark-border shrink-0">
+          <i data-lucide="terminal" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-semibold text-white mb-1">CLI Native: Pipe Directly From Stderr</h4>
+          <p class="text-xs text-zinc-400 leading-relaxed">
+            Install the open-source CLI with one line: <code class="text-brand-300 font-mono">npm i -g tracelens</code>. Automatically catch failed tests via <code class="text-zinc-300 font-mono">pytest 2>&1 | tracelens</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Flow Section -->
+  <section id="architecture" class="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-dark-border/50">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <h2 class="text-xs font-mono uppercase tracking-widest text-accent-cyan mb-2">How It Works</h2>
+      <p class="text-2xl sm:text-3xl font-extrabold text-white">From Terminal Crash to Fixed Branch</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+      <div class="glass-card rounded-xl p-6 border-l-2 border-brand-500">
+        <span class="text-xs font-mono text-brand-400">Step 01</span>
+        <h4 class="text-base font-bold text-white mt-1 mb-2">Crash Slicing & Parsing</h4>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          The client parses raw ANSI codes, filters out irrelevant runtime boilerplates, and isolates culprit frames using language-specific heuristics.
+        </p>
+      </div>
+
+      <div class="glass-card rounded-xl p-6 border-l-2 border-accent-cyan">
+        <span class="text-xs font-mono text-accent-cyan">Step 02</span>
+        <h4 class="text-base font-bold text-white mt-1 mb-2">Sub-Second LLM Synthesis</h4>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Groq or Gemini processes the isolated context alongside target AST patterns to construct a syntactically correct fix without hallucinations.
+        </p>
+      </div>
+
+      <div class="glass-card rounded-xl p-6 border-l-2 border-accent-violet">
+        <span class="text-xs font-mono text-accent-violet">Step 03</span>
+        <h4 class="text-base font-bold text-white mt-1 mb-2">Unified Git Patch Emit</h4>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Outputs standard Git unified diff formatting with line offsets, ready for instant application with a single click or terminal command.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Table -->
+  <section id="pricing" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-dark-border/50">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <h2 class="text-xs font-mono uppercase tracking-widest text-brand-400 mb-2">Transparent Pricing</h2>
+      <p class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Free forever for open source. Scale as you grow.
+      </p>
+      <p class="text-zinc-400 text-sm mt-3">
+        No surprise billing. Use your own free API keys or our high-speed cloud infrastructure.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Plan 1: Free Tier -->
+      <div class="glass-card rounded-2xl p-8 flex flex-col justify-between border border-dark-border hover:border-zinc-700 transition">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white">Community</h3>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Free Tier</span>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-extrabold text-white">$0</span>
+            <span class="text-xs text-zinc-500 font-mono">/ forever</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-6">Perfect for individual developers and open-source contributors.</p>
+          
+          <ul class="space-y-3 text-xs text-zinc-300">
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Bring Your Own Key (BYOK) - Unlimited</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>50 Free Cloud diagnoses / month</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Standard Git unified diff export</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Web Sandbox & Community Discord</span>
+            </li>
+          </ul>
+        </div>
+
+        <a href="#playground" class="mt-8 w-full py-2.5 rounded-lg text-center font-mono text-xs font-semibold bg-dark-elevated hover:bg-dark-border text-white border border-dark-border transition">
+          Start Free
+        </a>
+      </div>
+
+      <!-- Plan 2: Pro Developer (Highlighted) -->
+      <div class="glass-card rounded-2xl p-8 flex flex-col justify-between border-2 border-brand-500/60 shadow-xl shadow-brand-500/10 relative">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-brand-400 text-zinc-950 font-mono text-[10px] font-bold uppercase tracking-wider">
+          Most Popular
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white">Pro Developer</h3>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">Solo Pro</span>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-extrabold text-white">$19</span>
+            <span class="text-xs text-zinc-500 font-mono">/ month</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-6">For engineers who want instant fixes without managing API quotas.</p>
+          
+          <ul class="space-y-3 text-xs text-zinc-300">
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span><strong>Unlimited</strong> Groq Llama 3.3 70B & Gemini Flash</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>TraceLens CLI (<code class="text-brand-300">npm/cargo pipe</code>)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>1-Click GitHub Pull Request creator</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>VS Code & JetBrains IDE plugin early access</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Priority inference queue (Sub-150ms)</span>
+            </li>
+          </ul>
+        </div>
+
+        <button onclick="alert('TraceLens Pro is currently accepting beta signups. Connect with GitHub to claim 30 days free!')" class="mt-8 w-full py-2.5 rounded-lg text-center font-mono text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-950 shadow-md shadow-brand-500/20 transition">
+          Claim 30-Day Pro Pass
+        </button>
+      </div>
+
+      <!-- Plan 3: Team -->
+      <div class="glass-card rounded-2xl p-8 flex flex-col justify-between border border-dark-border hover:border-zinc-700 transition">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white">Team</h3>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">Scale</span>
+          </div>
+          <div class="mb-6">
+            <span class="text-4xl font-extrabold text-white">$49</span>
+            <span class="text-xs text-zinc-500 font-mono">/ seat / mo</span>
+          </div>
+          <p class="text-xs text-zinc-400 mb-6">Designed for engineering teams needing centralized error triage.</p>
+          
+          <ul class="space-y-3 text-xs text-zinc-300">
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Everything in Pro Developer</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Shared team crash catalog & telemetry</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>CI/CD GitHub Actions automated auto-PR bot</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>Slack & Discord real-time triage webhooks</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
+              <span>SAML / SSO & dedicated account manager</span>
+            </li>
+          </ul>
+        </div>
+
+        <button onclick="alert('Contact sales: support@tracelens.ai or configure self-hosted enterprise.')" class="mt-8 w-full py-2.5 rounded-lg text-center font-mono text-xs font-semibold bg-dark-elevated hover:bg-dark-border text-white border border-dark-border transition">
+          Contact Sales
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div class="glass-card rounded-2xl p-10 text-center relative overflow-hidden border border-brand-500/30">
+      <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -top-20 w-64 h-64 bg-accent-cyan/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4">Stop manually parsing cryptic logs.</h2>
+      <p class="text-zinc-400 text-sm max-w-xl mx-auto mb-8">
+        Join forward-thinking engineers shipping bug-free code with automated AI stack trace triage.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#playground" class="px-6 py-3 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-950 font-mono text-xs font-bold transition">
+          Try Sandbox Now
+        </a>
+        <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="px-6 py-3 rounded-xl bg-dark-elevated hover:bg-dark-border text-white font-mono text-xs font-medium border border-dark-border transition flex items-center space-x-2">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>View Source Code</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer (With mandatory legal text) -->
+  <footer class="relative z-10 border-t border-dark-border/80 bg-dark-bg/95 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      
+      <!-- Brand & Legal Line -->
+      <div class="flex flex-col items-center md:items-start text-center md:text-left space-y-2">
+        <div class="flex items-center space-x-2">
+          <div class="w-6 h-6 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-brand-400"></i>
+          </div>
+          <span class="text-sm font-bold text-white">TraceLens AI</span>
+        </div>
+        
+        <!-- MANDATORY EXACT LEGAL TEXT -->
+        <p class="text-xs text-zinc-400 font-sans">
+          &copy; 2026 TraceLens. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
+        </p>
+      </div>
+
+      <!-- Links (Including Terms & Privacy) -->
+      <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400">
+        <a href="terms.html" class="hover:text-white transition">Terms of Service</a>
+        <span class="text-zinc-600">•</span>
+        <a href="privacy.html" class="hover:text-white transition">Privacy Policy</a>
+        <span class="text-zinc-600">•</span>
+        <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="hover:text-white transition flex items-center space-x-1">
+          <i data-lucide="github" class="w-3.5 h-3.5"></i>
+          <span>GitHub</span>
+        </a>
+        <span class="text-zinc-600">•</span>
+        <button id="footer-settings-btn" class="hover:text-white transition">API Keys</button>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Settings / BYOK Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-dark-border shadow-2xl relative">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <i data-lucide="key" class="w-4 h-4 text-brand-400"></i>
+          <span>Bring Your Own Key (BYOK)</span>
+        </h3>
+        <button id="close-settings-btn" class="text-zinc-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
+        TraceLens runs completely client-side. Your API keys are saved exclusively in your browser's local storage and are never uploaded to any backend.
+      </p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-mono text-zinc-300 mb-1 flex items-center justify-between">
+            <span>Groq API Key (Free)</span>
+            <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-brand-400 hover:underline">Get Key &rarr;</a>
+          </label>
+          <input type="password" id="groq-key-input" placeholder="gsk_..." class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-400">
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono text-zinc-300 mb-1 flex items-center justify-between">
+            <span>Google Gemini API Key (Free)</span>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-accent-cyan hover:underline">Get Key &rarr;</a>
+          </label>
+          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-accent-cyan">
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end space-x-3">
+        <button id="save-keys-btn" class="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-brand-400 hover:bg-brand-500 text-zinc-950 transition">
+          Save Locally
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-lg bg-dark-surface border border-brand-500/40 text-xs font-mono text-brand-400 shadow-2xl flex items-center space-x-2 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span id="toast-message">Copied to clipboard!</span>
+  </div>
+
+  <!-- Client JavaScript -->
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
