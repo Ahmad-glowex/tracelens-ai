@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `You are TraceLens AI, a high-performance automated code triage and patch synthesis engine.
+    const systemPrompt = `You are RunFix AI, a high-performance automated code triage and patch synthesis engine.
 Analyze the provided error traceback or terminal crash log.
 You MUST output valid, parseable JSON only.
 Be concise, direct, and actionable. Do not output conversational preamble.
@@ -287,8 +287,8 @@ async function callOpenAICompatibleBackend(
   } else if (provider === "openrouter") {
     endpoint = "https://openrouter.ai/api/v1/chat/completions";
     headers["Authorization"] = `Bearer ${apiKey}`;
-    headers["HTTP-Referer"] = "https://tracelens.ai";
-    headers["X-Title"] = "TraceLens AI";
+    headers["HTTP-Referer"] = "https://runfix.live";
+    headers["X-Title"] = "RunFix AI";
   } else if (provider === "openai") {
     endpoint = "https://api.openai.com/v1/chat/completions";
     headers["Authorization"] = `Bearer ${apiKey}`;
@@ -426,7 +426,7 @@ function extractJson(text: string) {
         return {
           rootCause: rootCauseMatch[1],
           targetFile: targetFileMatch ? targetFileMatch[1] : "patch.diff",
-          diff: "@@ -1,1 +1,1 @@\n-// Error\n+// Fixed by TraceLens AI",
+          diff: "@@ -1,1 +1,1 @@\n-// Error\n+// Fixed by RunFix AI",
         };
       }
       throw new Error("Unable to parse valid JSON diagnostic from AI model.");

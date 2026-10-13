@@ -84,7 +84,7 @@ export default function PrivacyPage() {
       <footer className="border-t border-dark-border/80 bg-dark-bg/95 py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p>
-            &copy; 2026 TraceLens. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave,
+            &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave,
             Cheyenne, WY 82001, United States).
           </p>
           <div className="flex items-center space-x-4">

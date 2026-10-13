@@ -74,7 +74,7 @@ Visit [http://localhost:3000](http://localhost:3000) or check the live productio
 
 ## 📄 Legal & Operator Notice
 
-© 2026 TraceLens. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
+© 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
 
 - Official Domain: [https://runfix.live](https://runfix.live)
 - Support & Founder Contact: [founder@runfix.live](mailto:founder@runfix.live)

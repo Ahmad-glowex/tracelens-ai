@@ -37,6 +37,7 @@ import {
   Code2,
   RefreshCw,
   Clock,
+  Download,
 } from "lucide-react";
 
 // Preset Real-World Error Samples
@@ -104,7 +105,7 @@ Traceback (most recent call last):
 goroutine 64 [running]:
 runtime.throw({0x10b75d2?, 0x0?})
     /usr/local/go/src/runtime/panic.go:1077 +0x5c
-github.com/tracelens/engine/cache.(*MemoryCache).Set(0xc00010c000, {0x10a241b, 0x7}, {0x10a5140, 0xc0000a8030})
+github.com/runfix/engine/cache.(*MemoryCache).Set(0xc00010c000, {0x10a241b, 0x7}, {0x10a5140, 0xc0000a8030})
     /app/internal/cache/memory_store.go:38 +0x88`,
     rootCause: `Native Go maps are not goroutine-safe. Multiple concurrent worker routines executed MemoryCache.Set and Get concurrently on the shared reference without sync primitives.`,
     diff: `@@ -12,8 +12,10 @@ package cache
@@ -141,7 +142,7 @@ stack backtrace:
   },
   docker: {
     targetFile: "docker-compose.yml",
-    input: `container tracelens-worker exited with code 137
+    input: `container runfix-worker exited with code 137
 dmesg: [18492.102381] Out of memory: Killed process 8491 (node) total-vm:4194304kB, anon-rss:2097152kB
 worker-1  | FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`,
     rootCause: `Exit Code 137 denotes a SIGKILL by Linux OOM Killer. The Node.js v8 runtime exceeded its default 2GB memory boundary inside container constraints.`,
@@ -155,6 +156,21 @@ worker-1  | FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap 
          limits:
 -          memory: 2048M
 +          memory: 4096M`,
+  },
+  next: {
+    targetFile: "app/dashboard/page.tsx",
+    input: `Unhandled Runtime Error
+Error: Hydration failed because the initial UI does not match what was rendered on the server.
+Warning: Expected server HTML to contain a matching <div> in <span>.
+    at Dashboard (app/dashboard/page.tsx:18:11)
+    at HydrationErrorBoundary (node_modules/next/dist/client/components/react-dev-overlay.js)`,
+    rootCause: `Hydration mismatch triggered by accessing dynamic browser state (such as Date.now(), window, or localStorage) during server pre-rendering. The initial client DOM structure differed from the dehydrated SSR response.`,
+    diff: `@@ -15,7 +15,9 @@ export default function Dashboard() {
++  const [mounted, setMounted] = useState(false);
++  useEffect(() => setMounted(true), []);
+-  return <span>Current Time: {new Date().toLocaleTimeString()}</span>;
++  return <span>Current Time: {mounted ? new Date().toLocaleTimeString() : "--:--:--"}</span>;
++}`,
   },
 };
 
@@ -199,18 +215,20 @@ export default function HomePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [testingModel, setTestingModel] = useState(false);
 
-  // Toast
+  // Toast & Export states
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedDiff, setCopiedDiff] = useState(false);
+  const [downloadedDiff, setDownloadedDiff] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const outputSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedProv = localStorage.getItem("tracelens_provider") || "river";
-    const savedMod = localStorage.getItem("tracelens_model") || "zai-org/GLM-5.3-Flash";
-    const savedKey = localStorage.getItem("tracelens_api_key") || "";
-    const savedUrl = localStorage.getItem("tracelens_custom_url") || "https://api.river.ai/v1";
+    const savedProv = localStorage.getItem("runfix_provider") || localStorage.getItem("tracelens_provider") || "river";
+    const savedMod = localStorage.getItem("runfix_model") || localStorage.getItem("tracelens_model") || "zai-org/GLM-5.3-Flash";
+    const savedKey = localStorage.getItem("runfix_api_key") || localStorage.getItem("tracelens_api_key") || "";
+    const savedUrl = localStorage.getItem("runfix_custom_url") || localStorage.getItem("tracelens_custom_url") || "https://api.river.ai/v1";
 
     setSelectedProvider(savedProv);
     setSelectedModel(savedMod);
@@ -224,6 +242,22 @@ export default function HomePage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDownloadDiff = () => {
+    if (!diffText) return;
+    const blob = new Blob([diffText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = diffTarget ? `${diffTarget.split("/").pop() || "patch"}.diff` : "patch.diff";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setDownloadedDiff(true);
+    showToast("📥 Git patch downloaded as .diff file!");
+    setTimeout(() => setDownloadedDiff(false), 2500);
   };
 
   const handleSelectPreset = (key: string) => {
@@ -320,7 +354,7 @@ export default function HomePage() {
         }, 80);
       }
     } catch (err: any) {
-      console.error("❌ [TraceLens Error]:", err);
+      console.error("❌ [RunFix AI Error]:", err);
       setErrorMessage(err.message || "Failed to contact backend API route.");
       setStatusPill("Analysis Error");
       showToast(`⚠️ Error: ${err.message?.substring(0, 32)}...`);
@@ -519,7 +553,7 @@ export default function HomePage() {
             {/* Presets - Horizontally Scrollable */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
               <span className="text-xs text-zinc-500 font-mono mr-1 shrink-0">Presets:</span>
-              {(["node", "python", "go", "rust", "docker"] as const).map((key) => (
+              {(["node", "python", "next", "go", "rust", "docker"] as const).map((key) => (
                 <button
                   key={key}
                   onClick={() => handleSelectPreset(key)}
@@ -533,6 +567,8 @@ export default function HomePage() {
                     ? "Node / TS"
                     : key === "python"
                     ? "Python FastAPI"
+                    : key === "next"
+                    ? "Next.js 14"
                     : key === "go"
                     ? "Go Panic"
                     : key === "rust"
@@ -733,7 +769,20 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <button
+                    onClick={handleDownloadDiff}
+                    className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 transition flex items-center space-x-1.5 active:scale-95"
+                    title="Download unified diff as file"
+                  >
+                    {downloadedDiff ? (
+                      <Check className="w-3 h-3 text-cyan-400" />
+                    ) : (
+                      <Download className="w-3 h-3 text-cyan-400" />
+                    )}
+                    <span className="hidden sm:inline">{downloadedDiff ? "Downloaded" : "Download"}</span>
+                    <span className="sm:hidden">.diff</span>
+                  </button>
                   <button
                     onClick={handleCopyDiff}
                     className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 transition flex items-center space-x-1.5 active:scale-95"
@@ -783,15 +832,52 @@ export default function HomePage() {
                 </pre>
               </div>
 
-              <div className="px-4 py-3 bg-zinc-900/60 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[11px] font-mono text-zinc-500">Unified Diff (RFC 5322 compatible)</span>
+              {/* Step-by-Step Triage Explanation Accordion */}
+              <div className="px-3.5 py-2.5 bg-zinc-900/40 border-t border-white/5">
                 <button
-                  onClick={handleCopyDiff}
-                  className="px-3 py-1.5 text-xs font-mono rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 transition flex items-center space-x-1.5"
+                  type="button"
+                  onClick={() => setShowExplanation(!showExplanation)}
+                  className="w-full flex items-center justify-between text-xs font-mono text-zinc-400 hover:text-emerald-400 transition"
                 >
-                  <Copy className="w-3 h-3 text-emerald-400" />
-                  <span>Apply Patch</span>
+                  <span className="flex items-center space-x-1.5 font-semibold">
+                    <Code2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Step-by-Step Verification & Apply Guide</span>
+                  </span>
+                  <span className="text-[11px] text-zinc-500">{showExplanation ? "Hide ▲" : "Expand ▼"}</span>
                 </button>
+                {showExplanation && (
+                  <div className="mt-2.5 pt-2 border-t border-white/5 text-xs text-zinc-300 font-mono space-y-1.5 leading-relaxed">
+                    <p className="text-zinc-400">
+                      <strong className="text-emerald-400">Step 1:</strong> Save patch as <code className="text-emerald-300 bg-zinc-800 px-1 py-0.5 rounded">runfix.patch</code> in your repository.
+                    </p>
+                    <p className="text-zinc-400">
+                      <strong className="text-cyan-400">Step 2:</strong> Execute in shell: <code className="text-cyan-300 bg-zinc-800 px-1 py-0.5 rounded">git apply runfix.patch</code>
+                    </p>
+                    <p className="text-zinc-400">
+                      <strong className="text-purple-400">Step 3:</strong> Rerun your test suite or compiler to verify zero regressions.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-4 py-3 bg-zinc-900/60 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-zinc-500">RFC 5322 Unified Diff</span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleDownloadDiff}
+                    className="px-2.5 py-1 text-xs font-mono rounded bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-white/10 transition flex items-center space-x-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Download</span>
+                  </button>
+                  <button
+                    onClick={handleCopyDiff}
+                    className="px-3 py-1 text-xs font-mono rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition flex items-center space-x-1.5"
+                  >
+                    <Copy className="w-3 h-3 text-emerald-400" />
+                    <span>Apply Patch</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -975,7 +1061,7 @@ export default function HomePage() {
             </div>
             {/* MANDATORY EXACT LEGAL TEXT */}
             <p className="text-xs text-zinc-400 font-sans">
-              &copy; 2026 TraceLens. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
+              &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
             </p>
           </div>
 
