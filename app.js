@@ -3,12 +3,28 @@
  * 100% Client-Side execution (OpenRouter, Groq, Gemini, OpenAI, Custom Base URL)
  */
 
+// Defensive safeguard so window.TRACELENS_CONFIG is NEVER undefined
+if (typeof window !== 'undefined' && !window.TRACELENS_CONFIG) {
+  if (typeof TRACELENS_CONFIG !== 'undefined') {
+    window.TRACELENS_CONFIG = TRACELENS_CONFIG;
+  } else {
+    window.TRACELENS_CONFIG = {
+      defaultProvider: 'groq',
+      defaultModel: 'llama-3.3-70b-versatile',
+      defaultApiKey: '',
+      fallbackProvider: 'gemini',
+      fallbackModel: 'gemini-2.0-flash',
+      fallbackApiKey: ''
+    };
+  }
+}
+
 // Provider Presets & Metadata
 const PROVIDERS = {
   groq: {
     name: 'Groq LPUs',
-    defaultModel: 'qwen/qwen3.8-27b',
-    models: ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile'],
+    defaultModel: 'llama-3.3-70b-versatile',
+    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b'],
     keyLink: 'https://console.groq.com/keys',
     keyHint: 'Groq LPUs deliver 500+ tok/sec inference. 100% free with no credit card required.',
     badge: 'Ultra-Fast Free Tier'
@@ -28,10 +44,10 @@ const PROVIDERS = {
   },
   gemini: {
     name: 'Google Gemini',
-    defaultModel: 'gemini-3.8-flash',
-    models: ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-pro'],
+    defaultModel: 'gemini-2.0-flash',
+    models: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-flash-latest'],
     keyLink: 'https://aistudio.google.com/app/apikey',
-    keyHint: 'Google AI Studio free tier provides 15 RPM with 1M context window.',
+    keyHint: 'Google AI Studio official Gemini API.',
     badge: 'Direct Google API'
   },
   openai: {
@@ -448,9 +464,13 @@ testConnectionBtn.addEventListener('click', async () => {
 });
 
 /**
- * Universal AI Dispatcher
+ * Universal AI Dispatcher with Transparent Console Logging and Auto-Model Fallback
  */
 async function dispatchUniversalAI({ provider, model, apiKey, customUrl, log, isTest = false }) {
+  console.group(`⚡ [TraceLens AI] Dispatching ${provider} (Requested Model: ${model})`);
+  console.log('⏰ Timestamp:', new Date().toLocaleTimeString());
+  console.log('🔑 Key Status:', apiKey ? `Present (${apiKey.substring(0, 7)}...)` : 'None');
+
   const systemPrompt = isTest 
     ? 'Reply with valid JSON: {"status":"connected"}'
     : `You are TraceLens AI, an expert software debugging and automated patch engine.
@@ -467,8 +487,11 @@ Structure:
 
   if (provider === 'gemini') {
     // Google Gemini API
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
+    let activeGeminiModel = model || 'gemini-2.0-flash';
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${activeGeminiModel}:generateContent?key=${apiKey}`;
+    console.log('📡 Gemini Request URL:', url);
+
+    let res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -476,18 +499,40 @@ Structure:
         generationConfig: { responseMimeType: "application/json" }
       })
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
+
+    let data = await res.json().catch(() => ({}));
+    console.log('📡 Gemini Response Status:', res.status, res.statusText);
+    console.log('📦 Gemini Response Body:', data);
+
+    // If requested model returns 404 (e.g. deprecated or unavailable), auto-resolve to latest available model
+    if (!res.ok && (res.status === 404 || data.error?.code === 404)) {
+      console.warn(`⚠️ [Gemini] Model '${activeGeminiModel}' returned 404. Auto-switching to 'gemini-3.8-flash'...`);
+      activeGeminiModel = 'gemini-3.8-flash';
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${activeGeminiModel}:generateContent?key=${apiKey}`;
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\nCrash Log:\n${log}` }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      data = await res.json().catch(() => ({}));
+      console.log('📡 Fallback Gemini Status:', res.status, data);
     }
-    const data = await res.json();
+
+    if (!res.ok) {
+      console.groupEnd();
+      throw new Error(data.error?.message || `Google Gemini HTTP ${res.status}`);
+    }
+
     responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log('✅ Gemini Raw Text:', responseText);
+    console.groupEnd();
   } else {
     // OpenAI-Compatible Providers (Groq, OpenRouter, OpenAI, Custom)
     let endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    const headers = { 'Content-Type': 'application/json' };
 
     if (provider === 'groq') {
       endpoint = 'https://api.groq.com/openai/v1/chat/completions';
@@ -505,31 +550,55 @@ Structure:
       if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
-    const payload = {
-      model: model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: log }
-      ]
+    let activeModel = model || 'llama-3.3-70b-versatile';
+    const makePayload = (m) => {
+      const p = {
+        model: m,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: log }
+        ]
+      };
+      if (provider === 'groq' || provider === 'openai') {
+        p.response_format = { type: 'json_object' };
+      }
+      return p;
     };
 
-    if (provider === 'groq' || provider === 'openai') {
-      payload.response_format = { type: 'json_object' };
-    }
+    console.log('📡 Request Endpoint:', endpoint);
+    console.log('📤 Sending Model:', activeModel);
 
-    const res = await fetch(endpoint, {
+    let res = await fetch(endpoint, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(makePayload(activeModel))
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    let data = await res.json().catch(() => ({}));
+    console.log('📡 Response Status:', res.status, res.statusText);
+    console.log('📦 Response Body:', data);
+
+    // If Groq returns model_not_found, auto-switch to available working model (qwen3.8-27b)
+    if (!res.ok && provider === 'groq' && (data.error?.code === 'model_not_found' || data.error?.message?.includes('does not exist'))) {
+      console.warn(`⚠️ [Groq] Model '${activeModel}' not available on this key. Auto-switching to 'qwen/qwen3.8-27b'...`);
+      activeModel = 'qwen/qwen3.8-27b';
+      res = await fetch(endpoint, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(makePayload(activeModel))
+      });
+      data = await res.json().catch(() => ({}));
+      console.log('📡 Fallback Groq Response Status:', res.status, data);
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      console.groupEnd();
+      throw new Error(data.error?.message || `Provider ${provider} HTTP ${res.status}`);
+    }
+
     responseText = data.choices?.[0]?.message?.content || '';
+    console.log('✅ AI Raw Output Content:', responseText);
+    console.groupEnd();
   }
 
   // Parse JSON from LLM response safely
@@ -585,7 +654,7 @@ async function runDiagnosis() {
   const userModel = localStorage.getItem('tracelens_model');
   const userCustomUrl = localStorage.getItem('tracelens_custom_url');
 
-  const defaultConfig = window.TRACELENS_CONFIG || {};
+  const defaultConfig = (typeof window !== 'undefined' && window.TRACELENS_CONFIG) ? window.TRACELENS_CONFIG : {};
   const defaultKey = defaultConfig.defaultApiKey ? defaultConfig.defaultApiKey.trim() : '';
 
   let provider, model, apiKey, customUrl;
@@ -628,9 +697,9 @@ async function runDiagnosis() {
       } catch (primaryErr) {
         // Automatic failover: If built-in primary fails, try built-in secondary fallback
         if (!userApiKey && defaultConfig.fallbackApiKey) {
-          console.warn('Primary provider error, failing over to secondary provider...', primaryErr);
+          console.warn('⚠️ Primary provider failed, attempting fallback to Gemini...', primaryErr);
           const fallbackProv = defaultConfig.fallbackProvider || 'gemini';
-          const fallbackMod = defaultConfig.fallbackModel || 'gemini-3.8-flash';
+          const fallbackMod = defaultConfig.fallbackModel || 'gemini-2.0-flash';
           inferencePill.textContent = `Failing over to ${PROVIDERS[fallbackProv]?.name || fallbackProv}...`;
           
           result = await dispatchUniversalAI({
@@ -653,12 +722,31 @@ async function runDiagnosis() {
       renderDiff(result.diff || `@@ -1,3 +1,3 @@\n-// Verified fix\n+// Auto-applied`);
 
       const sourceLabel = isDefault ? ' (Built-in Free)' : '';
-      inferencePill.textContent = `${latency}ms • ${PROVIDERS[provider]?.name || provider} (${model.split('/').pop()})${sourceLabel}`;
+      inferencePill.textContent = `✓ ${latency}ms • ${PROVIDERS[provider]?.name || provider} (${model.split('/').pop()})${sourceLabel}`;
       showToast('Live AI diagnosis complete!');
     } catch (err) {
-      console.error('Real API dispatch error:', err);
-      showToast(`API Notice: ${err.message || 'Call failed'}`);
-      fallbackSimulation(startTime);
+      console.error('❌ [TraceLens AI] Diagnosis Error:', err);
+      const errorMsg = err.message || 'Unknown API request failure';
+      
+      // Visible on-screen error banner so user is never left wondering
+      rootCauseText.innerHTML = `<div class="text-rose-400 font-mono text-xs p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
+        <div class="font-bold mb-1 flex items-center space-x-1.5">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5 inline"></i>
+          <span>API Request Failed:</span>
+        </div>
+        <div class="text-rose-300 font-mono">${escapeHtml(errorMsg)}</div>
+        <div class="mt-2 text-[10px] text-zinc-400">Press F12 to inspect full network payload logs in Console, or click "Configure Model" to test your API key.</div>
+      </div>`;
+      
+      diffFileTarget.textContent = 'error.log';
+      renderDiff(`@@ -0,0 +1,3 @@
++// API Request Error:
++// ${escapeHtml(errorMsg)}
++// Check Developer Console (F12) for detailed logs.`);
+
+      inferencePill.textContent = `Error (${provider})`;
+      showToast(`⚠️ Error: ${errorMsg.substring(0, 32)}...`);
+      lucide.createIcons();
     }
   } else {
     // Neither user key nor built-in default key is set
@@ -669,7 +757,7 @@ async function runDiagnosis() {
       fallbackSimulation(startTime);
     } else {
       const wantsConfig = confirm(
-        '⚡ Built-in API key is being initialized!\n\nTo analyze custom stack traces right away, you can also paste your free Groq or Gemini API key in 10 seconds.\n\nWould you like to open the Model Settings modal now?'
+        '⚡ No API key configured!\n\nTo analyze custom stack traces right away, click "Configure Model" to enter your free Groq or Gemini key.\n\nWould you like to open the Model Settings modal now?'
       );
       if (wantsConfig) {
         openSettings();
