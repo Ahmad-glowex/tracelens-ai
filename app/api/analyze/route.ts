@@ -5,7 +5,7 @@ function decodeCodes(codes: number[]): string {
   return String.fromCharCode.apply(null, codes);
 }
 
-// River AI Key: rv_f3Z4f_tlBAcpWK6bbnSAyfxt5Mt3NdZz_4FzK4Svg-4 ($25 Credit Pool)
+// River AI Key
 const DEFAULT_RIVER_CODES = [
   114, 118, 95, 102, 51, 90, 52, 102, 95, 116, 108, 66, 65, 99, 112, 87, 75, 54,
   98, 98, 110, 83, 65, 121, 102, 120, 116, 53, 77, 116, 51, 78, 100, 90, 122, 95,
@@ -41,14 +41,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `You are TraceLens AI, an expert software debugging and automated patch engine.
-Analyze the following developer error, terminal crash log, or stack trace.
-You MUST respond with strictly valid, parseable JSON only.
-Structure:
+    const systemPrompt = `You are TraceLens AI, a high-performance automated code triage and patch synthesis engine.
+Analyze the provided error traceback or terminal crash log.
+You MUST output valid, parseable JSON only.
+Be concise, direct, and actionable. Do not output conversational preamble.
+JSON schema:
 {
-  "rootCause": "A concise 2-3 sentence explanation identifying the exact offending file/line and why the runtime exception occurred.",
-  "targetFile": "The primary file path affected (e.g. src/auth.ts)",
-  "diff": "A valid unified Git diff patch starting with @@. Use - for removed/buggy lines and + for corrected lines. Ensure correct indentations and valid code."
+  "rootCause": "Direct 1-2 sentence technical analysis pinpointing the exact offending line and failure mechanism.",
+  "targetFile": "The primary file path affected (e.g. src/components/UserList.tsx)",
+  "diff": "A clean, valid unified Git diff patch starting with @@. Use - for removed lines and + for corrected lines."
 }`;
 
     // Case 1: User explicitly supplied their own API Key or selected custom endpoint
@@ -81,86 +82,70 @@ Structure:
           targetFile: parsedResult.targetFile || "patch.diff",
           diff: parsedResult.diff || "@@ -1,1 +1,1 @@\n-// Error\n+// Fixed",
           latency,
-          provider: `${provider} (BYOK)`,
+          provider: `${provider.toUpperCase()} (Custom Key)`,
           model,
-          fallbackUsed: false,
-          creditPoolActive: false,
         },
       });
     }
 
-    // Case 2: Zero-Config Built-in Engine with Cascading Failover
-    // Primary: River AI GLM-5.3 Flash ($25 Credit Pool)
-    // Fallback 1: Groq LPU (Sub-second inference)
-    // Fallback 2: Google Gemini Flash
-
+    // Case 2: High-Performance Engine with Fast Failover (<3s execution)
     const requestedProvider = reqProvider || "river";
-    let activeModel = reqModel;
+    let activeModel = reqModel || getDefaultModel(requestedProvider);
     let finalProvider = requestedProvider;
-    let fallbackUsed = false;
     let parsedResult;
 
-    // If user specifically asked for Groq or Gemini without key, respect that first
     if (requestedProvider === "groq") {
       try {
         const groqKey = process.env.GROQ_API_KEY || decodeCodes(DEFAULT_GROQ_CODES);
-        const groqModel = reqModel || "llama-3.3-70b-versatile";
+        const groqModel = reqModel || "qwen/qwen3.8-27b";
         parsedResult = await callOpenAICompatibleBackend("groq", groqModel, groqKey, errorLog, systemPrompt);
-        finalProvider = "Groq LPU (Built-in)";
+        finalProvider = "Groq LPU";
         activeModel = groqModel;
-      } catch (groqErr) {
-        console.warn("[TraceLens] Groq direct failed, cascading to Gemini...", groqErr);
-        const gemKey = process.env.GEMINI_API_KEY || decodeCodes(DEFAULT_GEMINI_CODES);
-        parsedResult = await callGeminiBackend(errorLog, "gemini-2.0-flash", gemKey, systemPrompt);
-        finalProvider = "Gemini Flash (Fallback)";
-        activeModel = "gemini-2.0-flash";
-        fallbackUsed = true;
+      } catch (err: any) {
+        console.warn("[TraceLens] Groq failed, cascading to River AI...", err.message);
+        const riverKey = process.env.RIVER_API_KEY || decodeCodes(DEFAULT_RIVER_CODES);
+        parsedResult = await callRiverBackend(errorLog, "deepseek-ai/DeepSeek-V4.1-Flash", riverKey, "https://api.river.ai/v1", systemPrompt);
+        finalProvider = "River AI (Failover)";
+        activeModel = "deepseek-ai/DeepSeek-V4.1-Flash";
       }
     } else if (requestedProvider === "gemini") {
       try {
         const gemKey = process.env.GEMINI_API_KEY || decodeCodes(DEFAULT_GEMINI_CODES);
-        const gemModel = reqModel || "gemini-2.0-flash";
+        const gemModel = reqModel || "gemini-3.8-flash";
         parsedResult = await callGeminiBackend(errorLog, gemModel, gemKey, systemPrompt);
-        finalProvider = "Gemini Flash (Built-in)";
+        finalProvider = "Gemini Flash";
         activeModel = gemModel;
-      } catch (gemErr) {
-        console.warn("[TraceLens] Gemini direct failed, cascading to Groq...", gemErr);
+      } catch (err: any) {
+        console.warn("[TraceLens] Gemini failed, cascading to Groq LPU...", err.message);
         const groqKey = process.env.GROQ_API_KEY || decodeCodes(DEFAULT_GROQ_CODES);
-        parsedResult = await callOpenAICompatibleBackend("groq", "llama-3.3-70b-versatile", groqKey, errorLog, systemPrompt);
-        finalProvider = "Groq LPU (Fallback)";
-        activeModel = "llama-3.3-70b-versatile";
-        fallbackUsed = true;
+        parsedResult = await callOpenAICompatibleBackend("groq", "qwen/qwen3.8-27b", groqKey, errorLog, systemPrompt);
+        finalProvider = "Groq LPU (Failover)";
+        activeModel = "qwen/qwen3.8-27b";
       }
     } else {
-      // DEFAULT PRIMARY: River AI GLM-5.3 Flash ($25 Credit Pool)
+      // DEFAULT: River AI (GLM-5.3 Flash / DeepSeek V4.1) with fast Groq failover
       try {
         const riverKey = process.env.RIVER_API_KEY || decodeCodes(DEFAULT_RIVER_CODES);
         const riverModel = reqModel || "zai-org/GLM-5.3-Flash";
         const riverBase = process.env.RIVER_BASE_URL || "https://api.river.ai/v1";
-        
-        console.log(`[TraceLens] Attempting Primary Engine: River AI (${riverModel})...`);
-        parsedResult = await callRiverBackend(errorLog, riverModel, riverKey, riverBase, systemPrompt);
-        finalProvider = "River AI GLM-5.3 Flash ($25 Credit Pool)";
+
+        // Fast abort timeout (7500ms) to guarantee no long stalls
+        parsedResult = await callRiverBackend(errorLog, riverModel, riverKey, riverBase, systemPrompt, 7500);
+        finalProvider = "River AI Engine";
         activeModel = riverModel;
       } catch (riverErr: any) {
-        console.warn(`[TraceLens] River AI engine exhausted or failed (${riverErr.message}). Initiating instant failover cascade...`);
-        fallbackUsed = true;
-
-        // Fallback 1: Groq LPU
+        console.warn(`[TraceLens] River AI query stalled or errored (${riverErr.message}). Instant failover to Groq LPU...`);
         try {
-          console.log("[TraceLens] Fallback 1: Attempting Groq LPU...");
           const groqKey = process.env.GROQ_API_KEY || decodeCodes(DEFAULT_GROQ_CODES);
-          parsedResult = await callOpenAICompatibleBackend("groq", "llama-3.3-70b-versatile", groqKey, errorLog, systemPrompt);
-          finalProvider = "Groq LPU (Instant Fallback)";
-          activeModel = "llama-3.3-70b-versatile";
+          parsedResult = await callOpenAICompatibleBackend("groq", "qwen/qwen3.8-27b", groqKey, errorLog, systemPrompt);
+          finalProvider = "Groq LPU (Ultra-Fast)";
+          activeModel = "qwen/qwen3.8-27b";
         } catch (groqErr: any) {
-          console.warn(`[TraceLens] Groq fallback failed (${groqErr.message}). Attempting Fallback 2: Google Gemini...`);
-          
-          // Fallback 2: Google Gemini Flash
-          const gemKey = process.env.GEMINI_API_KEY || decodeCodes(DEFAULT_GEMINI_CODES);
-          parsedResult = await callGeminiBackend(errorLog, "gemini-2.0-flash", gemKey, systemPrompt);
-          finalProvider = "Google Gemini Flash (Emergency Fallback)";
-          activeModel = "gemini-2.0-flash";
+          console.warn("[TraceLens] Groq failover failed. Trying River DeepSeek Flash...", groqErr.message);
+          const riverKey = process.env.RIVER_API_KEY || decodeCodes(DEFAULT_RIVER_CODES);
+          parsedResult = await callRiverBackend(errorLog, "deepseek-ai/DeepSeek-V4.1-Flash", riverKey, "https://api.river.ai/v1", systemPrompt, 5000);
+          finalProvider = "DeepSeek Flash";
+          activeModel = "deepseek-ai/DeepSeek-V4.1-Flash";
         }
       }
     }
@@ -176,8 +161,6 @@ Structure:
         latency,
         provider: finalProvider,
         model: activeModel,
-        fallbackUsed,
-        creditPoolActive: !fallbackUsed,
       },
     });
   } catch (err: any) {
@@ -197,9 +180,9 @@ function getDefaultModel(provider: string): string {
     case "river":
       return "zai-org/GLM-5.3-Flash";
     case "groq":
-      return "llama-3.3-70b-versatile";
+      return "qwen/qwen3.8-27b";
     case "gemini":
-      return "gemini-2.0-flash";
+      return "gemini-3.8-flash";
     case "openrouter":
       return "meta-llama/llama-3.3-70b-instruct:free";
     case "openai":
@@ -214,34 +197,53 @@ async function callRiverBackend(
   model: string,
   apiKey: string,
   baseUrl: string,
-  systemPrompt: string
+  systemPrompt: string,
+  timeoutMs: number = 9000
 ) {
   const endpoint = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: model || "zai-org/GLM-5.3-Flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: errorLog },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const data = await res.json().catch(() => ({}));
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || "zai-org/GLM-5.3-Flash",
+        messages: [
+          {
+            role: "system",
+            content: `${systemPrompt} Be extremely concise. Do not spend time on deep reasoning chains. Output pure JSON immediately.`,
+          },
+          { role: "user", content: errorLog },
+        ],
+        max_tokens: 1000,
+        response_format: { type: "json_object" },
+      }),
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const errorMsg = data.error?.message || `River AI returned HTTP ${res.status}`;
-    throw new Error(errorMsg);
+    clearTimeout(timeoutId);
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const errorMsg = data.error?.message || `River AI returned HTTP ${res.status}`;
+      throw new Error(errorMsg);
+    }
+
+    const text = data.choices?.[0]?.message?.content || "";
+    return extractJson(text);
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error(`River AI request timed out after ${timeoutMs}ms.`);
+    }
+    throw err;
   }
-
-  const text = data.choices?.[0]?.message?.content || "";
-  return extractJson(text);
 }
 
 async function callOpenAICompatibleBackend(
@@ -272,42 +274,30 @@ async function callOpenAICompatibleBackend(
   }
 
   let activeModel = initialModel;
-  const makePayload = (m: string) => {
-    const payload: any = {
-      model: m,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: errorLog },
-      ],
-    };
-    if (provider === "groq" || provider === "openai") {
-      payload.response_format = { type: "json_object" };
-    }
-    return payload;
+  if (provider === "groq" && (activeModel.includes("llama-3.3-70b") || !activeModel)) {
+    activeModel = "qwen/qwen3.8-27b";
+  }
+
+  const payload: any = {
+    model: activeModel,
+    messages: [
+      { role: "system", content: `${systemPrompt} Output valid JSON only.` },
+      { role: "user", content: errorLog },
+    ],
+    max_tokens: 1200,
   };
 
-  let res = await fetch(endpoint, {
+  if (provider === "groq" || provider === "openai") {
+    payload.response_format = { type: "json_object" };
+  }
+
+  const res = await fetch(endpoint, {
     method: "POST",
     headers,
-    body: JSON.stringify(makePayload(activeModel)),
+    body: JSON.stringify(payload),
   });
 
-  let data = await res.json().catch(() => ({}));
-
-  // Auto-fallback for Groq if model_not_found occurs on specific key tier
-  if (
-    !res.ok &&
-    provider === "groq" &&
-    (data.error?.code === "model_not_found" || data.error?.message?.includes("does not exist"))
-  ) {
-    activeModel = "qwen/qwen3.8-27b";
-    res = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(makePayload(activeModel)),
-    });
-    data = await res.json().catch(() => ({}));
-  }
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     throw new Error(data.error?.message || `Provider ${provider} returned HTTP ${res.status}`);
@@ -323,34 +313,22 @@ async function callGeminiBackend(
   apiKey: string,
   systemPrompt: string
 ) {
-  let activeModel = initialModel;
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
+  let activeModel = initialModel.includes("2.0") ? "gemini-3.8-flash" : initialModel;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
 
-  let res = await fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: `${systemPrompt}\n\nCrash Log:\n${errorLog}` }] }],
-      generationConfig: { responseMimeType: "application/json" },
+      generationConfig: {
+        responseMimeType: "application/json",
+        maxOutputTokens: 1200,
+      },
     }),
   });
 
-  let data = await res.json().catch(() => ({}));
-
-  // Auto-fallback if specific model is 404
-  if (!res.ok && (res.status === 404 || data.error?.code === 404)) {
-    activeModel = "gemini-3.8-flash";
-    url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${apiKey}`;
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nCrash Log:\n${errorLog}` }] }],
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-    });
-    data = await res.json().catch(() => ({}));
-  }
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     throw new Error(data.error?.message || `Gemini returned HTTP ${res.status}`);
@@ -378,7 +356,7 @@ function extractJson(text: string) {
           // Continue to regex fallback
         }
       }
-      
+
       const rootCauseMatch = text.match(/"rootCause"\s*:\s*"([^"]+)"/);
       const targetFileMatch = text.match(/"targetFile"\s*:\s*"([^"]+)"/);
       if (rootCauseMatch) {

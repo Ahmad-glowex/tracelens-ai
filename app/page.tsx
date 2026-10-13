@@ -32,10 +32,11 @@ import {
   Activity,
   ExternalLink,
   Menu,
-  Coins,
+  Key,
   Layers,
   Code2,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 
 // Preset Real-World Error Samples
@@ -67,10 +68,11 @@ const SAMPLES: Record<
 +  return (
 +    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 +      {(users ?? []).map((user) => (
+-        <UserCard key={user.id} user={user} />
 +        <UserCard key={user.id} user={user} />
-+      ))}
-+    </div>
-+  );
+       ))}
+     </div>
+   );
  }`,
   },
   python: {
@@ -156,54 +158,21 @@ worker-1  | FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap 
   },
 };
 
-const PROVIDERS_META: Record<
-  string,
-  { name: string; defaultModel: string; models: string[]; keyLink: string; badge?: string }
-> = {
-  river: {
-    name: "River AI (GLM-5.3 Flash)",
-    defaultModel: "zai-org/GLM-5.3-Flash",
-    models: ["zai-org/GLM-5.3-Flash", "deepseek-ai/DeepSeek-V4.1-Flash"],
-    keyLink: "https://river.ai",
-    badge: "$25 Credit Active (Primary)",
-  },
-  groq: {
-    name: "Groq LPUs",
-    defaultModel: "llama-3.3-70b-versatile",
-    models: ["llama-3.3-70b-versatile", "qwen/qwen3.8-27b", "llama-3.1-8b-instant"],
-    keyLink: "https://console.groq.com/keys",
-    badge: "Instant Fallback",
-  },
-  gemini: {
-    name: "Google Gemini",
-    defaultModel: "gemini-2.0-flash",
-    models: ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-3.8-flash"],
-    keyLink: "https://aistudio.google.com/app/apikey",
-    badge: "Emergency Fallback",
-  },
-  openrouter: {
-    name: "OpenRouter",
-    defaultModel: "meta-llama/llama-3.3-70b-instruct:free",
-    models: [
-      "meta-llama/llama-3.3-70b-instruct:free",
-      "google/gemini-2.0-flash-exp:free",
-      "deepseek/deepseek-r1:free",
-    ],
-    keyLink: "https://openrouter.ai/keys",
-  },
-  openai: {
-    name: "OpenAI",
-    defaultModel: "gpt-4o-mini",
-    models: ["gpt-4o-mini", "gpt-4o"],
-    keyLink: "https://platform.openai.com/api-keys",
-  },
-  custom: {
-    name: "Custom (OpenAI-Compatible)",
-    defaultModel: "llama3",
-    models: ["llama3", "mistral", "qwen2.5-coder"],
-    keyLink: "https://ollama.com",
-  },
-};
+interface ModelOption {
+  provider: string;
+  model: string;
+  label: string;
+  badge: string;
+}
+
+const POPULAR_MODELS: ModelOption[] = [
+  { provider: "river", model: "zai-org/GLM-5.3-Flash", label: "GLM-5.3 Flash (River AI)", badge: "Fast Reasoning" },
+  { provider: "river", model: "deepseek-ai/DeepSeek-V4.1-Flash", label: "DeepSeek V4.1 (River AI)", badge: "Balanced" },
+  { provider: "groq", model: "qwen/qwen3.8-27b", label: "Qwen 3.8 27B (Groq LPU)", badge: "Sub-Second" },
+  { provider: "gemini", model: "gemini-3.8-flash", label: "Gemini 3.8 Flash (Google)", badge: "Long Context" },
+  { provider: "openai", model: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)", badge: "Standard" },
+  { provider: "custom", model: "custom-model", label: "Custom OpenAI-Compatible", badge: "Self-Hosted" },
+];
 
 export default function HomePage() {
   const [currentPreset, setCurrentPreset] = useState("node");
@@ -212,20 +181,21 @@ export default function HomePage() {
   const [diffTarget, setDiffTarget] = useState(SAMPLES.node.targetFile);
   const [diffText, setDiffText] = useState(SAMPLES.node.diff);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [statusPill, setStatusPill] = useState("GLM-5.3 Flash • $25 Pool Active");
+  const [statusPill, setStatusPill] = useState("Ready • Sub-Second Engine");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Mobile View Tab: "input" or "output"
   const [mobileTab, setMobileTab] = useState<"input" | "output">("input");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Settings State
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Model & Key state
   const [selectedProvider, setSelectedProvider] = useState("river");
   const [selectedModel, setSelectedModel] = useState("zai-org/GLM-5.3-Flash");
   const [userApiKey, setUserApiKey] = useState("");
   const [customBaseUrl, setCustomBaseUrl] = useState("https://api.river.ai/v1");
   const [keyVisible, setKeyVisible] = useState(false);
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [testingModel, setTestingModel] = useState(false);
 
   // Toast
@@ -237,8 +207,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const savedProv = localStorage.getItem("tracelens_provider") || "river";
-    const savedMod =
-      localStorage.getItem("tracelens_model") || PROVIDERS_META[savedProv]?.defaultModel || "zai-org/GLM-5.3-Flash";
+    const savedMod = localStorage.getItem("tracelens_model") || "zai-org/GLM-5.3-Flash";
     const savedKey = localStorage.getItem("tracelens_api_key") || "";
     const savedUrl = localStorage.getItem("tracelens_custom_url") || "https://api.river.ai/v1";
 
@@ -246,6 +215,9 @@ export default function HomePage() {
     setSelectedModel(savedMod);
     setUserApiKey(savedKey);
     setCustomBaseUrl(savedUrl);
+    if (savedKey) {
+      setShowKeyInput(true);
+    }
   }, []);
 
   const showToast = (msg: string) => {
@@ -269,49 +241,31 @@ export default function HomePage() {
   const handleCopyDiff = () => {
     navigator.clipboard.writeText(diffText).then(() => {
       setCopiedDiff(true);
-      showToast("Git diff copied to clipboard (`git apply` ready)");
+      showToast("Git diff copied (`git apply` ready)");
       setTimeout(() => setCopiedDiff(false), 2000);
     });
   };
 
-  const handleSaveSettings = () => {
-    localStorage.setItem("tracelens_provider", selectedProvider);
-    localStorage.setItem("tracelens_model", selectedModel);
-    if (userApiKey.trim()) {
-      localStorage.setItem("tracelens_api_key", userApiKey.trim());
+  const handleModelChange = (modelId: string) => {
+    const found = POPULAR_MODELS.find((m) => m.model === modelId);
+    if (found) {
+      setSelectedProvider(found.provider);
+      setSelectedModel(found.model);
+      localStorage.setItem("tracelens_provider", found.provider);
+      localStorage.setItem("tracelens_model", found.model);
+      showToast(`Active Model: ${found.label}`);
     } else {
-      localStorage.removeItem("tracelens_api_key");
+      setSelectedModel(modelId);
+      localStorage.setItem("tracelens_model", modelId);
     }
-    if (customBaseUrl.trim()) {
-      localStorage.setItem("tracelens_custom_url", customBaseUrl.trim());
-    }
-    setSettingsOpen(false);
-    showToast(`Configured: ${PROVIDERS_META[selectedProvider]?.name} (${selectedModel})`);
   };
 
-  const handleTestConnection = async () => {
-    setTestingModel(true);
-    try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          errorLog: "Error: ping connection test",
-          provider: selectedProvider,
-          model: selectedModel,
-          apiKey: userApiKey.trim(),
-          customUrl: customBaseUrl.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-      alert(`✓ Connection verified! Engine responded in ${data.data?.latency}ms via ${data.data?.provider}.`);
-    } catch (err: any) {
-      alert(`Connection Failed: ${err.message}`);
-    } finally {
-      setTestingModel(false);
+  const handleApiKeyChange = (keyVal: string) => {
+    setUserApiKey(keyVal);
+    if (keyVal.trim()) {
+      localStorage.setItem("tracelens_api_key", keyVal.trim());
+    } else {
+      localStorage.removeItem("tracelens_api_key");
     }
   };
 
@@ -325,11 +279,9 @@ export default function HomePage() {
 
     setIsAnalyzing(true);
     setErrorMessage(null);
-    setStatusPill(`Dispatching to /api/analyze (${selectedProvider})...`);
+    setStatusPill(`Analyzing via ${selectedModel.split("/").pop()}...`);
 
-    console.group("⚡ [TraceLens Full-Stack] Dispatching /api/analyze");
-    console.log("Provider:", selectedProvider, "Model:", selectedModel);
-    console.log("Input Length:", raw.length);
+    const start = Date.now();
 
     try {
       const res = await fetch("/api/analyze", {
@@ -345,33 +297,29 @@ export default function HomePage() {
       });
 
       const json = await res.json();
-      console.log("📡 API Response Status:", res.status);
-      console.log("📦 API Response Body:", json);
-      console.groupEnd();
 
       if (!json.success) {
         throw new Error(json.error || "Analysis failed.");
       }
 
-      const { rootCause: rc, targetFile: tf, diff: df, latency, provider: p, model: m, fallbackUsed } = json.data;
+      const { rootCause: rc, targetFile: tf, diff: df, latency, provider: p, model: m } = json.data;
       setRootCause(rc);
       setDiffTarget(tf);
       setDiffText(df);
-      
-      const badgeSuffix = fallbackUsed ? " (Failover)" : " (Primary $25 Pool)";
-      setStatusPill(`✓ ${latency}ms • ${m.split("/").pop()}${badgeSuffix}`);
-      showToast("Live AI diagnosis complete!");
 
-      // Switch mobile tab to output automatically
+      const elapsed = latency || Date.now() - start;
+      setStatusPill(`✓ ${elapsed}ms • ${p}`);
+      showToast("Triage complete!");
+
+      // Switch mobile tab to output
       setMobileTab("output");
       if (window.innerWidth < 1024) {
         setTimeout(() => {
           outputSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
+        }, 80);
       }
     } catch (err: any) {
       console.error("❌ [TraceLens Error]:", err);
-      console.groupEnd();
       setErrorMessage(err.message || "Failed to contact backend API route.");
       setStatusPill("Analysis Error");
       showToast(`⚠️ Error: ${err.message?.substring(0, 32)}...`);
@@ -384,25 +332,25 @@ export default function HomePage() {
     return diff.split("\n").map((line, idx) => {
       if (line.startsWith("+") && !line.startsWith("+++")) {
         return (
-          <div key={idx} className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border-l-2 border-emerald-500 select-text">
+          <div key={idx} className="bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 border-l-2 border-emerald-500 select-text">
             {line}
           </div>
         );
       } else if (line.startsWith("-") && !line.startsWith("---")) {
         return (
-          <div key={idx} className="bg-rose-500/10 text-rose-400 px-2 py-0.5 border-l-2 border-rose-500 select-text">
+          <div key={idx} className="bg-rose-500/10 text-rose-400 px-2.5 py-0.5 border-l-2 border-rose-500 select-text">
             {line}
           </div>
         );
       } else if (line.startsWith("@@")) {
         return (
-          <div key={idx} className="text-cyan-400/90 bg-cyan-950/30 px-2 py-0.5 font-semibold select-none border-y border-cyan-800/20">
+          <div key={idx} className="text-cyan-400/90 bg-cyan-950/30 px-2.5 py-0.5 font-semibold select-none border-y border-cyan-800/20">
             {line}
           </div>
         );
       }
       return (
-        <div key={idx} className="text-zinc-400 px-2 py-0.5 select-text">
+        <div key={idx} className="text-zinc-400 px-2.5 py-0.5 select-text">
           {line}
         </div>
       );
@@ -413,24 +361,9 @@ export default function HomePage() {
   const charCount = errorInput.length;
 
   return (
-    <div className="relative min-h-screen text-zinc-100 font-sans selection:bg-brand-500/30 selection:text-white">
-      {/* Top Engine Announcement Banner */}
-      <div className="w-full bg-gradient-to-r from-emerald-950/80 via-zinc-900 to-emerald-950/80 border-b border-emerald-500/20 px-3 py-1.5 text-center text-xs font-mono text-zinc-300 flex items-center justify-center gap-2 flex-wrap">
-        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-        <span className="font-semibold text-emerald-300">Live AI Pool:</span>
-        <span>River AI GLM-5.3 Flash ($25 Credit Pool Loaded)</span>
-        <span className="text-zinc-600 hidden sm:inline">•</span>
-        <span className="text-zinc-400 hidden sm:inline">Auto-Failover to Groq LPU & Gemini</span>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="ml-1 text-[11px] underline text-emerald-400 hover:text-emerald-300"
-        >
-          Details
-        </button>
-      </div>
-
+    <div className="relative min-h-screen text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-white">
       {/* Navigation */}
-      <nav className="sticky top-0 z-40 border-b border-white/5 bg-[#08080b]/85 backdrop-blur-xl">
+      <nav className="sticky top-0 z-40 border-b border-white/5 bg-[#08080b]/90 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link href="/" className="flex items-center space-x-2.5 group">
@@ -449,7 +382,7 @@ export default function HomePage() {
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center space-x-7 text-sm font-medium text-zinc-400">
+          <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
             <a href="#playground" className="hover:text-white transition-colors">
               Workbench
             </a>
@@ -458,7 +391,7 @@ export default function HomePage() {
             </a>
             <a href="#beta" className="hover:text-white transition-colors flex items-center space-x-1.5 text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Public Beta (100% Free)</span>
+              <span>Beta Access</span>
             </a>
             <a
               href="https://github.com/Ahmad-glowex/tracelens-ai"
@@ -471,27 +404,15 @@ export default function HomePage() {
             </a>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="px-2.5 sm:px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-white/10 flex items-center space-x-1.5 transition shadow-sm group"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-45 transition-transform" />
-              <span className="hidden sm:inline">Model Settings</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                {selectedModel.split("/").pop()?.replace(":free", "")}
-              </span>
-            </button>
-
+          {/* Quick Actions */}
+          <div className="flex items-center space-x-2.5">
             <a
               href="#playground"
-              className="hidden sm:inline-flex px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-mono shadow-md shadow-emerald-500/25 transition-all"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-mono shadow-md shadow-emerald-500/20 transition-all"
             >
               Launch Triage
             </a>
 
-            {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white"
@@ -509,21 +430,21 @@ export default function HomePage() {
               onClick={() => setMobileMenuOpen(false)}
               className="block text-zinc-300 hover:text-white py-1"
             >
-              ⚡ Workbench Sandbox
+              ⚡ Workbench
             </a>
             <a
               href="#features"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-zinc-300 hover:text-white py-1"
             >
-              🛠️ Core Features
+              🛠️ Features
             </a>
             <a
               href="#beta"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-emerald-400 hover:text-emerald-300 py-1"
             >
-              🎁 100% Free Public Beta
+              🎁 Beta Access
             </a>
             <a
               href="https://github.com/Ahmad-glowex/tracelens-ai"
@@ -533,30 +454,20 @@ export default function HomePage() {
             >
               ⭐ GitHub Repository
             </a>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setSettingsOpen(true);
-              }}
-              className="w-full text-left text-emerald-400 py-1 flex items-center space-x-1.5"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Configure AI Providers</span>
-            </button>
           </div>
         )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 pt-12 sm:pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-zinc-900/90 border border-emerald-500/30 text-zinc-300 shadow-sm shadow-emerald-500/10 mb-6">
+      <section className="relative z-10 pt-16 sm:pt-24 pb-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full text-xs font-mono bg-zinc-900/90 border border-emerald-500/30 text-zinc-300 shadow-sm shadow-emerald-500/10 mb-6">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-semibold text-emerald-400">Next.js 14 App Router</span>
+          <span className="font-semibold text-emerald-400">Automated Error Triage & Patch Engine</span>
           <span className="text-zinc-600">•</span>
-          <span className="text-zinc-400">River AI GLM-5.3 Flash & Groq LPUs</span>
+          <span className="text-zinc-400">Sub-Second Execution</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15] mb-6">
+        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.12] mb-6">
           Turn cryptic stack traces into <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
             instant root causes & Git diffs.
@@ -564,74 +475,35 @@ export default function HomePage() {
         </h1>
 
         <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
-          Unhandled promise rejections, type panics, and container crashes resolved in sub-seconds. TraceLens isolates offending frames and produces verified, <code className="text-emerald-400">git apply</code> compatible diffs.
+          Unhandled runtime exceptions, type panics, and container crashes resolved in seconds. TraceLens isolates offending frames and produces verified, <code className="text-emerald-400 font-mono">git apply</code> compatible diffs.
         </p>
 
         {/* Action CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 max-w-md sm:max-w-none mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12 max-w-md sm:max-w-none mx-auto">
           <a
             href="#playground"
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-medium text-xs sm:text-sm text-zinc-950 bg-emerald-400 hover:bg-emerald-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 flex items-center justify-center space-x-2 font-mono"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-xs sm:text-sm text-zinc-950 bg-emerald-400 hover:bg-emerald-300 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 flex items-center justify-center space-x-2 font-mono"
           >
             <Play className="w-4 h-4 fill-current" />
-            <span>Open Interactive Workbench</span>
+            <span>Open Workbench</span>
           </a>
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-medium text-xs sm:text-sm text-zinc-300 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 transition-all duration-200 flex items-center justify-center space-x-2 font-mono"
-          >
-            <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-            <span>Configure AI Engine</span>
-          </button>
           <a
             href="https://github.com/Ahmad-glowex/tracelens-ai"
             target="_blank"
             rel="noreferrer"
-            className="w-full sm:w-auto px-5 py-3.5 rounded-xl font-medium text-xs sm:text-sm text-zinc-400 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 transition-all duration-200 flex items-center justify-center space-x-2"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-medium text-xs sm:text-sm text-zinc-400 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 transition-all duration-200 flex items-center justify-center space-x-2 font-mono"
           >
             <Github className="w-4 h-4" />
             <span>Star on GitHub</span>
           </a>
-        </div>
-
-        {/* Live Pool Status Card */}
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-zinc-900/60 border border-white/5 backdrop-blur-md text-left text-xs font-mono">
-          <div className="flex items-center space-x-3 p-2.5 rounded-xl bg-zinc-900/80 border border-white/5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-              <Coins className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-500 uppercase">Primary Engine</div>
-              <div className="text-emerald-300 font-semibold truncate">GLM-5.3 Flash ($25 Pool)</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-2.5 rounded-xl bg-zinc-900/80 border border-white/5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
-              <RefreshCw className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-500 uppercase">Zero-Downtime Failover</div>
-              <div className="text-zinc-200 font-semibold">Groq LPU + Gemini Flash</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-2.5 rounded-xl bg-zinc-900/80 border border-white/5">
-            <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-500 uppercase">Architecture</div>
-              <div className="text-zinc-200 font-semibold">Serverless API / Zero CORS</div>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Interactive Workbench / Sandbox */}
       <section id="playground" className="relative z-10 py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="glass-card rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10">
-          {/* Header & Preset Switchers */}
+          
+          {/* Top Workbench Toolbar: Presets & Direct Inline Model Selector */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 mb-4 border-b border-white/5 gap-3">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
@@ -639,11 +511,11 @@ export default function HomePage() {
                 <span>Real-Time Triage Workbench</span>
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Paste any terminal crash log, or test a stack trace preset with our serverless AI pipeline.
+                Paste any terminal crash log, select your model, and generate instant unified diff patches.
               </p>
             </div>
 
-            {/* Presets - Horizontally Scrollable on Mobile */}
+            {/* Presets - Horizontally Scrollable */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
               <span className="text-xs text-zinc-500 font-mono mr-1 shrink-0">Presets:</span>
               {(["node", "python", "go", "rust", "docker"] as const).map((key) => (
@@ -667,6 +539,78 @@ export default function HomePage() {
                     : "Docker OOM"}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* INLINE MODEL SELECTION & API KEY TOOLBAR */}
+          <div className="mb-4 p-3 rounded-xl bg-zinc-900/90 border border-white/10 flex flex-wrap items-center justify-between gap-3">
+            {/* Model Selector Dropdown */}
+            <div className="flex items-center space-x-2 flex-1 min-w-[260px]">
+              <div className="flex items-center space-x-1.5 text-xs font-mono text-zinc-400 shrink-0">
+                <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Model:</span>
+              </div>
+              <select
+                value={selectedModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                className="flex-1 max-w-sm px-3 py-1.5 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400 cursor-pointer"
+              >
+                {POPULAR_MODELS.map((m) => (
+                  <option key={m.model} value={m.model}>
+                    {m.label} ({m.badge})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Direct API Key Input Toggle */}
+            <div className="flex items-center space-x-2">
+              {!showKeyInput ? (
+                <button
+                  onClick={() => setShowKeyInput(true)}
+                  className="px-2.5 py-1.5 text-xs font-mono text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg border border-white/5 flex items-center space-x-1.5 transition"
+                  title="Configure personal API key (Optional)"
+                >
+                  <Key className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Use Custom API Key</span>
+                </button>
+              ) : (
+                <div className="flex items-center space-x-1.5">
+                  <div className="relative flex items-center">
+                    <input
+                      type={keyVisible ? "text" : "password"}
+                      value={userApiKey}
+                      onChange={(e) => handleApiKeyChange(e.target.value)}
+                      placeholder="Paste API Key (Optional)..."
+                      className="w-48 sm:w-64 pl-2.5 pr-8 py-1.5 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400 placeholder:text-zinc-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setKeyVisible(!keyVisible)}
+                      className="absolute right-2 text-zinc-500 hover:text-zinc-300"
+                    >
+                      {keyVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {userApiKey && (
+                    <button
+                      onClick={() => handleApiKeyChange("")}
+                      className="text-xs text-zinc-500 hover:text-rose-400 p-1"
+                      title="Clear custom key"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white border border-white/5 transition"
+                title="Advanced Settings"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
@@ -761,7 +705,7 @@ export default function HomePage() {
                   className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-mono flex items-center justify-center space-x-2 transition shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-75 disabled:cursor-wait"
                 >
                   <Sparkles className="w-4 h-4 fill-current" />
-                  <span>{isAnalyzing ? "Analyzing via GLM-5.3..." : "Analyze Error (Sub-Second)"}</span>
+                  <span>{isAnalyzing ? "Analyzing (Sub-Second)..." : "Analyze Error"}</span>
                 </button>
               </div>
             </div>
@@ -863,7 +807,7 @@ export default function HomePage() {
             Sub-second diagnosis. Zero hallucinated patches.
           </p>
           <p className="text-zinc-400 text-sm sm:text-base mt-3">
-            Combining River AI GLM-5.3 Flash reasoning with ultra-fast Groq LPU inference.
+            Multi-model flexibility with instant failover across Groq LPUs, River AI, and Google Gemini.
           </p>
         </div>
 
@@ -905,30 +849,30 @@ export default function HomePage() {
               <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 mb-5 group-hover:scale-105 transition-transform">
                 <RefreshCw className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Cascading Failover Engine</h3>
+              <h3 className="text-lg font-bold text-white mb-2">High-Availability Failover</h3>
               <p className="text-zinc-400 text-sm leading-relaxed">
-                Primary queries stream through River AI GLM-5.3 Flash ($25 pool). If quotas exhaust, requests automatically failover to Groq LPUs and Gemini Flash.
+                Automated multi-engine redundancy ensures zero interruptions. If one model endpoint experiences latency, fallback engines resolve your request instantly.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center text-xs font-mono text-teal-400">
-              <span>99.99% Availability Guarantee</span>
+              <span>99.99% Availability</span>
               <ArrowRight className="w-3 h-3 ml-1" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Public Beta Section (100% Free) */}
+      {/* Public Beta Section */}
       <section id="beta" className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>PUBLIC BETA 1.0 • 100% FREE</span>
+            <span>PUBLIC BETA • OPEN ACCESS</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            No Paywalls.{" "}
+            Built for Developers.{" "}
             <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-              100% Free During Public Beta.
+              Zero Paywalls.
             </span>
           </h2>
           <p className="text-zinc-400 text-sm sm:text-base mt-4 max-w-2xl mx-auto">
@@ -948,8 +892,8 @@ export default function HomePage() {
               </p>
             </div>
             <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs font-mono">
-              <span className="text-emerald-400">Completely Free</span>
-              <span className="text-zinc-500">Zero Limits</span>
+              <span className="text-emerald-400">Open Access</span>
+              <span className="text-zinc-500">Unmetered</span>
             </div>
           </div>
 
@@ -964,7 +908,7 @@ export default function HomePage() {
               </p>
             </div>
             <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs font-mono">
-              <span className="text-cyan-400">Instant Access</span>
+              <span className="text-cyan-400">Direct Access</span>
               <span className="text-zinc-500">$0 / Month</span>
             </div>
           </div>
@@ -976,7 +920,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Community & Developer First</h3>
               <p className="text-zinc-400 text-sm leading-relaxed mb-4">
-                Configured with dedicated API credit pools ($25 River AI balance + Groq/Gemini fallbacks) with full BYOK privacy.
+                Configured with high-performance default AI endpoints and complete BYOK support for custom private keys.
               </p>
             </div>
             <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs font-mono">
@@ -1052,16 +996,11 @@ export default function HomePage() {
               <Github className="w-3.5 h-3.5" />
               <span>GitHub</span>
             </a>
-            <span className="text-zinc-600">•</span>
-            <button onClick={() => setSettingsOpen(true)} className="hover:text-white transition flex items-center space-x-1">
-              <SlidersHorizontal className="w-3 h-3 text-emerald-400" />
-              <span>Model Settings</span>
-            </button>
           </div>
         </div>
       </footer>
 
-      {/* Universal Settings Modal (Mobile & Desktop Responsive) */}
+      {/* Advanced Settings Modal */}
       {settingsOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="glass-card rounded-2xl max-w-lg w-full p-5 sm:p-7 border border-white/10 shadow-2xl relative my-auto">
@@ -1071,9 +1010,9 @@ export default function HomePage() {
                   <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">Configure AI Engine</h3>
+                  <h3 className="text-base font-bold text-white tracking-tight">Advanced AI Settings</h3>
                   <p className="text-[11px] text-zinc-400">
-                    River AI ($25 credit pool) active by default with instant failover.
+                    Configure custom base URLs or private endpoint overrides.
                   </p>
                 </div>
               </div>
@@ -1087,103 +1026,29 @@ export default function HomePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center space-x-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>AI Provider</span>
-                  </span>
-                  <span className="text-[10px] text-emerald-400 font-mono">Serverless Dispatch</span>
-                </label>
-                <select
-                  value={selectedProvider}
-                  onChange={(e) => {
-                    const p = e.target.value;
-                    setSelectedProvider(p);
-                    setSelectedModel(PROVIDERS_META[p]?.defaultModel || "");
-                    if (p === "river") {
-                      setCustomBaseUrl("https://api.river.ai/v1");
-                    }
-                  }}
-                  className="w-full px-3 py-2 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400"
-                >
-                  <option value="river">River AI GLM-5.3 Flash (Primary • $25 Pool Active)</option>
-                  <option value="groq">Groq LPUs (Fastest • Llama 3.3 70B & Qwen)</option>
-                  <option value="gemini">Google Gemini (Gemini 2.0 Flash)</option>
-                  <option value="openrouter">OpenRouter (Free Tiers)</option>
-                  <option value="openai">OpenAI (GPT-4o Mini / GPT-4o)</option>
-                  <option value="custom">Custom Endpoint (Ollama / LM Studio)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center space-x-1.5">
-                    <Bot className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Model Name</span>
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-mono">Custom or Preset</span>
+                <label className="block text-xs font-mono text-zinc-300 mb-1.5">
+                  <span>Custom Endpoint Base URL</span>
                 </label>
                 <input
                   type="text"
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  placeholder="zai-org/GLM-5.3-Flash"
-                  className="w-full px-3 py-2 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+                  value={customBaseUrl}
+                  onChange={(e) => setCustomBaseUrl(e.target.value)}
+                  placeholder="https://api.river.ai/v1 or http://localhost:11434/v1"
+                  className="w-full px-3 py-2 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400"
                 />
-
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {PROVIDERS_META[selectedProvider]?.models.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setSelectedModel(m)}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/5 transition"
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
               </div>
-
-              {(selectedProvider === "custom" || selectedProvider === "river") && (
-                <div>
-                  <label className="block text-xs font-mono text-zinc-300 mb-1.5">
-                    <span>Base URL</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={customBaseUrl}
-                    onChange={(e) => setCustomBaseUrl(e.target.value)}
-                    placeholder="https://api.river.ai/v1"
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none"
-                  />
-                </div>
-              )}
 
               <div>
                 <label className="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center space-x-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Optional Custom API Key (BYOK)</span>
-                  </span>
-                  {PROVIDERS_META[selectedProvider]?.keyLink && (
-                    <a
-                      href={PROVIDERS_META[selectedProvider].keyLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[10px] text-emerald-400 hover:underline flex items-center space-x-1"
-                    >
-                      <span>Get Key</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  )}
+                  <span>API Key</span>
+                  <span className="text-[10px] text-zinc-500">Stored in localStorage</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
                     type={keyVisible ? "text" : "password"}
                     value={userApiKey}
-                    onChange={(e) => setUserApiKey(e.target.value)}
-                    placeholder="Leave empty to use built-in server key & $25 credit pool..."
+                    onChange={(e) => handleApiKeyChange(e.target.value)}
+                    placeholder="Leave empty to use high-performance server default..."
                     className="w-full pl-3 pr-10 py-2 text-xs font-mono bg-[#09090d] border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400"
                   />
                   <button
@@ -1194,47 +1059,37 @@ export default function HomePage() {
                     {keyVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="text-[10px] text-zinc-500 font-mono mt-1">
-                  Leave empty to use the built-in $25 River AI credit pool and automatic failovers.
-                </p>
               </div>
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={handleTestConnection}
-                disabled={testingModel}
-                className="px-3.5 py-2 text-xs font-mono rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/10 transition flex items-center space-x-1.5 disabled:opacity-50"
+                onClick={() => {
+                  localStorage.clear();
+                  setSelectedProvider("river");
+                  setSelectedModel("zai-org/GLM-5.3-Flash");
+                  setUserApiKey("");
+                  setCustomBaseUrl("https://api.river.ai/v1");
+                  showToast("Settings reset!");
+                  setSettingsOpen(false);
+                }}
+                className="px-3 py-2 text-xs font-mono text-zinc-400 hover:text-rose-400 transition"
               >
-                <Activity className="w-3 h-3 text-emerald-400" />
-                <span>{testingModel ? "Testing..." : "Test Connection"}</span>
+                Reset Default
               </button>
 
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.clear();
-                    setSelectedProvider("river");
-                    setSelectedModel("zai-org/GLM-5.3-Flash");
-                    setUserApiKey("");
-                    setCustomBaseUrl("https://api.river.ai/v1");
-                    showToast("Settings reset to River AI GLM-5.3 ($25 Pool)!");
-                  }}
-                  className="px-3 py-2 text-xs font-mono text-zinc-400 hover:text-rose-400 transition"
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveSettings}
-                  className="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Save Settings</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsOpen(false);
+                  showToast("Settings saved!");
+                }}
+                className="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 transition flex items-center space-x-1.5 shadow-md shadow-emerald-500/20"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Done</span>
+              </button>
             </div>
           </div>
         </div>
