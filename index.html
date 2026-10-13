@@ -45,13 +45,6 @@
           },
           animation: {
             'glow-pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'radar': 'radar 4s linear infinite',
-          },
-          keyframes: {
-            radar: {
-              '0%': { transform: 'rotate(0deg)' },
-              '100%': { transform: 'rotate(360deg)' }
-            }
           }
         }
       }
@@ -62,7 +55,6 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* Silicon Valley subtle glow styling */
     body {
       background-color: #08080b;
       color: #f3f4f6;
@@ -81,7 +73,7 @@
     }
 
     .glass-card {
-      background: rgba(15, 15, 20, 0.7);
+      background: rgba(15, 15, 20, 0.75);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -112,7 +104,7 @@
   <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[600px] radial-glow pointer-events-none z-0"></div>
 
   <!-- Navigation Bar -->
-  <nav class="sticky top-0 z-50 border-b border-dark-border/80 bg-dark-bg/80 backdrop-blur-xl">
+  <nav class="sticky top-0 z-50 border-b border-dark-border/80 bg-dark-bg/85 backdrop-blur-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <a href="index.html" class="flex items-center space-x-2.5 group">
@@ -129,7 +121,7 @@
 
       <!-- Links -->
       <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
-        <a href="#playground" class="hover:text-white transition-colors">Interactive Sandbox</a>
+        <a href="#playground" class="hover:text-white transition-colors">Sandbox</a>
         <a href="#features" class="hover:text-white transition-colors">Features</a>
         <a href="#architecture" class="hover:text-white transition-colors">Architecture</a>
         <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
@@ -140,10 +132,15 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center space-x-3">
-        <button id="open-settings-btn" class="p-2 text-zinc-400 hover:text-white hover:bg-dark-elevated rounded-lg border border-transparent hover:border-dark-border transition-all" title="Configure API Keys (Groq / Gemini)">
-          <i data-lucide="settings" class="w-4 h-4"></i>
+      <div class="flex items-center space-x-2.5">
+        <!-- Configure Model Button (Requested) -->
+        <button id="open-settings-nav-btn" class="px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-dark-elevated hover:bg-dark-hover text-zinc-300 hover:text-white border border-dark-border flex items-center space-x-1.5 transition shadow-sm group">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-brand-400 group-hover:rotate-45 transition-transform"></i>
+          <span class="hidden sm:inline">Configure Model</span>
+          <span class="sm:hidden">Model</span>
+          <span id="active-model-badge" class="text-[10px] px-1.5 py-0.2 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">Groq 70B</span>
         </button>
+
         <a href="#playground" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-500 to-emerald-600 hover:from-brand-400 hover:to-emerald-500 text-zinc-950 font-mono shadow-md shadow-brand-500/25 hover:shadow-brand-500/40 transition-all">
           Launch Sandbox
         </a>
@@ -152,13 +149,13 @@
   </nav>
 
   <!-- Hero Section -->
-  <section class="relative z-10 pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+  <section class="relative z-10 pt-16 pb-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
     <!-- Top Announcement Pill -->
-    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-dark-surface border border-brand-500/30 text-zinc-300 shadow-sm shadow-brand-500/10 mb-8 animate-fade-in">
+    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-dark-surface border border-brand-500/30 text-zinc-300 shadow-sm shadow-brand-500/10 mb-6">
       <span class="flex h-2 w-2 rounded-full bg-brand-400 animate-ping"></span>
-      <span class="font-semibold text-brand-400">TraceLens v1.0 Live</span>
+      <span class="font-semibold text-brand-400">100% Real-Time AI</span>
       <span class="text-zinc-600">•</span>
-      <span class="text-zinc-400">Zero-latency root cause triage</span>
+      <span class="text-zinc-400">OpenRouter • Groq • Gemini • OpenAI • Local</span>
     </div>
 
     <!-- Main Headline -->
@@ -170,48 +167,52 @@
     </h1>
 
     <!-- Subheadline -->
-    <p class="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+    <p class="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
       Don't let cryptic runtime crashes, segfaults, or Docker exit codes halt your sprint. TraceLens pinpoints the precise root cause and delivers production-ready Git diffs in milliseconds.
     </p>
 
     <!-- Hero CTA Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-12">
       <a href="#playground" class="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-sm text-zinc-950 bg-brand-400 hover:bg-brand-500 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-200 flex items-center justify-center space-x-2 font-mono">
         <i data-lucide="play" class="w-4 h-4 fill-current"></i>
         <span>Try Interactive Sandbox</span>
       </a>
-      <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-sm text-zinc-300 hover:text-white bg-dark-surface hover:bg-dark-elevated border border-dark-border hover:border-zinc-700 transition-all duration-200 flex items-center justify-center space-x-2">
+      <button id="hero-config-btn" class="w-full sm:w-auto px-6 py-3.5 rounded-xl font-medium text-sm text-zinc-300 hover:text-white bg-dark-surface hover:bg-dark-elevated border border-dark-border hover:border-zinc-700 transition-all duration-200 flex items-center justify-center space-x-2 font-mono">
+        <i data-lucide="key" class="w-4 h-4 text-brand-400"></i>
+        <span>Set Free API Key</span>
+      </button>
+      <a href="https://github.com/Ahmad-glowex/tracelens-ai" target="_blank" class="w-full sm:w-auto px-6 py-3.5 rounded-xl font-medium text-sm text-zinc-400 hover:text-white bg-dark-surface hover:bg-dark-elevated border border-dark-border hover:border-zinc-700 transition-all duration-200 flex items-center justify-center space-x-2">
         <i data-lucide="github" class="w-4 h-4"></i>
         <span>Star on GitHub</span>
       </a>
     </div>
 
-    <!-- Trusted By / Stack Badges -->
+    <!-- Supported Providers Badges -->
     <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-500 font-mono uppercase tracking-wider">
       <div class="flex items-center space-x-1.5">
-        <i data-lucide="cpu" class="w-3.5 h-3.5 text-brand-400"></i>
-        <span>Groq 300+ tok/s</span>
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
+        <span>OpenRouter Free Models</span>
       </div>
       <span>•</span>
       <div class="flex items-center space-x-1.5">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-accent-cyan"></i>
-        <span>Gemini 1.5 Flash</span>
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Groq LPU 500+ tok/s</span>
       </div>
       <span>•</span>
       <div class="flex items-center space-x-1.5">
-        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span>Zero Code Telemetry</span>
+        <i data-lucide="bot" class="w-3.5 h-3.5 text-accent-cyan"></i>
+        <span>Gemini 2.0 / 1.5 Flash</span>
       </div>
       <span>•</span>
       <div class="flex items-center space-x-1.5">
-        <i data-lucide="terminal" class="w-3.5 h-3.5 text-accent-violet"></i>
-        <span>UNIX Pipe Compatible</span>
+        <i data-lucide="server" class="w-3.5 h-3.5 text-accent-violet"></i>
+        <span>Local Ollama / OpenAI</span>
       </div>
     </div>
   </section>
 
   <!-- Interactive Sandbox & Playground Section -->
-  <section id="playground" class="relative z-10 py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <section id="playground" class="relative z-10 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-2xl border border-dark-border">
       
       <!-- Sandbox Header & Quick Sample Buttons -->
@@ -219,14 +220,14 @@
         <div>
           <h2 class="text-lg font-semibold text-white flex items-center space-x-2">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-brand-400"></span>
-            <span>Live Triage Sandbox</span>
+            <span>Real-Time Triage Workbench</span>
           </h2>
-          <p class="text-xs text-zinc-400 mt-0.5">Select a pre-loaded crash sample or paste your own terminal output</p>
+          <p class="text-xs text-zinc-400 mt-0.5">Paste real crash logs or pick a curated sample to test instant git diff generation</p>
         </div>
 
         <!-- Presets -->
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs text-zinc-500 font-mono mr-1">Presets:</span>
+          <span class="text-xs text-zinc-500 font-mono mr-1">Samples:</span>
           <button data-sample="node" class="preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-brand-500/40 text-brand-400 hover:bg-dark-border transition">
             Node / TS
           </button>
@@ -254,7 +255,12 @@
               <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
               <span class="text-xs font-mono text-zinc-400 ml-2">stderr (Terminal / Test Runner)</span>
             </div>
-            <button id="clear-input-btn" class="text-xs text-zinc-500 hover:text-zinc-300 transition">Clear</button>
+            
+            <!-- Real Developer Stats: Character & Line Counter + Clear -->
+            <div class="flex items-center space-x-3">
+              <span id="char-line-counter" class="text-[11px] font-mono text-zinc-500">0 lines • 0 chars</span>
+              <button id="clear-input-btn" class="text-xs font-mono text-zinc-400 hover:text-rose-400 transition" title="Clear input">Clear</button>
+            </div>
           </div>
 
           <div class="p-3 flex-1 flex flex-col">
@@ -264,12 +270,12 @@
           <!-- Input Footer Bar -->
           <div class="px-4 py-3 bg-dark-surface/60 border-t border-dark-border flex items-center justify-between">
             <div class="text-[11px] text-zinc-500 font-mono flex items-center space-x-1">
-              <i data-lucide="info" class="w-3 h-3"></i>
-              <span>Press <kbd class="px-1 py-0.5 rounded bg-dark-elevated border border-dark-border text-zinc-300">⌘+Enter</kbd> to run</span>
+              <i data-lucide="info" class="w-3.5 h-3.5"></i>
+              <span>Press <kbd class="px-1 py-0.5 rounded bg-dark-elevated border border-dark-border text-zinc-300">⌘+Enter</kbd> to analyze</span>
             </div>
-            <button id="diagnose-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-500 hover:bg-brand-400 text-zinc-950 font-mono flex items-center space-x-2 transition shadow-lg shadow-brand-500/20">
+            <button id="diagnose-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-500 hover:bg-brand-400 text-zinc-950 font-mono flex items-center space-x-2 transition shadow-lg shadow-brand-500/20 active:scale-95">
               <i data-lucide="sparkles" class="w-3.5 h-3.5 fill-current"></i>
-              <span id="diagnose-btn-text">Diagnose & Generate Diff</span>
+              <span id="diagnose-btn-text">Analyze Error</span>
             </button>
           </div>
         </div>
@@ -284,9 +290,9 @@
             </div>
             
             <div class="flex items-center space-x-2">
-              <button id="copy-diff-btn" class="text-xs font-mono px-2 py-1 rounded bg-dark-elevated text-zinc-400 hover:text-white border border-dark-border transition flex items-center space-x-1">
-                <i data-lucide="copy" class="w-3 h-3"></i>
-                <span id="copy-btn-text">Copy Diff</span>
+              <button id="copy-diff-btn" class="text-xs font-mono px-2.5 py-1 rounded bg-dark-elevated text-zinc-300 hover:text-white border border-dark-border transition flex items-center space-x-1.5 active:scale-95">
+                <i data-lucide="copy" class="w-3 h-3 text-brand-400"></i>
+                <span id="copy-btn-text">Copy Git Diff</span>
               </button>
             </div>
           </div>
@@ -333,7 +339,7 @@
   </section>
 
   <!-- Feature Grid -->
-  <section id="features" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <section id="features" class="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="text-xs font-mono uppercase tracking-widest text-brand-400 mb-2">Engineered for Velocity</h2>
       <p class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -386,13 +392,13 @@
           <div class="w-12 h-12 rounded-xl bg-accent-violet/10 border border-accent-violet/20 flex items-center justify-center text-accent-violet mb-5 group-hover:scale-105 transition-transform">
             <i data-lucide="zap" class="w-6 h-6"></i>
           </div>
-          <h3 class="text-lg font-bold text-white mb-2">Groq & Gemini Dual Engine</h3>
+          <h3 class="text-lg font-bold text-white mb-2">Universal Multi-Provider Engine</h3>
           <p class="text-zinc-400 text-sm leading-relaxed">
-            Harness sub-200ms ultra-fast inference with Groq's Llama 3.3 LPUs for quick scripts, and leverage Google Gemini 1.5 Flash's 1M token context for massive multi-file stack traces.
+            Direct client integration with OpenRouter Free Models, Groq LPUs, Google Gemini 2.0/1.5, OpenAI, or local Ollama instances with sub-second turnaround.
           </p>
         </div>
         <div class="mt-6 pt-4 border-t border-dark-border/60 flex items-center text-xs font-mono text-accent-violet">
-          <span>Up to 800 tok/sec output</span>
+          <span>500+ tok/sec inference</span>
           <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
         </div>
       </div>
@@ -408,7 +414,7 @@
         <div>
           <h4 class="text-sm font-semibold text-white mb-1">Zero Telemetry & 100% Client-Side Privacy</h4>
           <p class="text-xs text-zinc-400 leading-relaxed">
-            Your proprietary stack traces and source code snippets never hit external analytics databases. Use Bring Your Own Key (BYOK) for completely decentralized execution.
+            Your proprietary stack traces and source code snippets never hit external analytics databases. Use Bring Your Own Key (BYOK) stored strictly in localStorage.
           </p>
         </div>
       </div>
@@ -447,7 +453,7 @@
         <span class="text-xs font-mono text-accent-cyan">Step 02</span>
         <h4 class="text-base font-bold text-white mt-1 mb-2">Sub-Second LLM Synthesis</h4>
         <p class="text-xs text-zinc-400 leading-relaxed">
-          Groq or Gemini processes the isolated context alongside target AST patterns to construct a syntactically correct fix without hallucinations.
+          Your configured model (Groq, OpenRouter, Gemini, or OpenAI) processes the isolated context to construct a syntactically correct fix without hallucinations.
         </p>
       </div>
 
@@ -455,7 +461,7 @@
         <span class="text-xs font-mono text-accent-violet">Step 03</span>
         <h4 class="text-base font-bold text-white mt-1 mb-2">Unified Git Patch Emit</h4>
         <p class="text-xs text-zinc-400 leading-relaxed">
-          Outputs standard Git unified diff formatting with line offsets, ready for instant application with a single click or terminal command.
+          Outputs standard Git unified diff formatting with line offsets, ready for instant application with <code class="text-zinc-300 font-mono">git apply</code>.
         </p>
       </div>
     </div>
@@ -495,7 +501,7 @@
             </li>
             <li class="flex items-center space-x-2">
               <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
-              <span>50 Free Cloud diagnoses / month</span>
+              <span>OpenRouter, Groq & Gemini Free Models</span>
             </li>
             <li class="flex items-center space-x-2">
               <i data-lucide="check" class="w-4 h-4 text-brand-400 shrink-0"></i>
@@ -554,7 +560,7 @@
           </ul>
         </div>
 
-        <button onclick="alert('TraceLens Pro is currently accepting beta signups. Connect with GitHub to claim 30 days free!')" class="mt-8 w-full py-2.5 rounded-lg text-center font-mono text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-950 shadow-md shadow-brand-500/20 transition">
+        <button onclick="alert('TraceLens Pro is accepting beta signups. Configure your free key above to use the platform right away!')" class="mt-8 w-full py-2.5 rounded-lg text-center font-mono text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-950 shadow-md shadow-brand-500/20 transition">
           Claim 30-Day Pro Pass
         </button>
       </div>
@@ -656,52 +662,130 @@
           <span>GitHub</span>
         </a>
         <span class="text-zinc-600">•</span>
-        <button id="footer-settings-btn" class="hover:text-white transition">API Keys</button>
+        <button id="footer-settings-btn" class="hover:text-white transition flex items-center space-x-1">
+          <i data-lucide="sliders-horizontal" class="w-3 h-3 text-brand-400"></i>
+          <span>API Settings</span>
+        </button>
       </div>
 
     </div>
   </footer>
 
-  <!-- Settings / BYOK Modal -->
-  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-dark-border shadow-2xl relative">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base font-bold text-white flex items-center space-x-2">
-          <i data-lucide="key" class="w-4 h-4 text-brand-400"></i>
-          <span>Bring Your Own Key (BYOK)</span>
-        </h3>
-        <button id="close-settings-btn" class="text-zinc-400 hover:text-white">
+  <!-- Universal Multi-Provider API Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-lg w-full p-6 sm:p-7 border border-dark-border shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-dark-border">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/30 flex items-center justify-center">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brand-400"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white tracking-tight">Configure AI Model</h3>
+            <p class="text-[11px] text-zinc-400">100% Client-Side. Saved in your browser's localStorage.</p>
+          </div>
+        </div>
+        <button id="close-settings-btn" class="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-dark-elevated transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <p class="text-xs text-zinc-400 mb-4 leading-relaxed">
-        TraceLens runs completely client-side. Your API keys are saved exclusively in your browser's local storage and are never uploaded to any backend.
-      </p>
-
+      <!-- Settings Form -->
       <div class="space-y-4">
+        
+        <!-- Provider Dropdown -->
         <div>
-          <label class="block text-xs font-mono text-zinc-300 mb-1 flex items-center justify-between">
-            <span>Groq API Key (Free)</span>
-            <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-brand-400 hover:underline">Get Key &rarr;</a>
+          <label class="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="cpu" class="w-3.5 h-3.5 text-brand-400"></i>
+              <span>AI Provider</span>
+            </span>
+            <span id="provider-badge" class="text-[10px] text-brand-400 font-mono">Free Tier Ready</span>
           </label>
-          <input type="password" id="groq-key-input" placeholder="gsk_..." class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-400">
+          <select id="provider-select" class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-400">
+            <option value="groq">Groq LPUs (Fastest • Free Llama 3.3 70B)</option>
+            <option value="openrouter">OpenRouter (Free Models & 100+ LLMs)</option>
+            <option value="gemini">Google Gemini (Gemini 2.0 / 1.5 Flash)</option>
+            <option value="openai">OpenAI (GPT-4o Mini / GPT-4o)</option>
+            <option value="custom">Custom OpenAI-Compatible (Local Ollama / LM Studio)</option>
+          </select>
         </div>
 
+        <!-- Model Name with Presets -->
         <div>
-          <label class="block text-xs font-mono text-zinc-300 mb-1 flex items-center justify-between">
-            <span>Google Gemini API Key (Free)</span>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-accent-cyan hover:underline">Get Key &rarr;</a>
+          <label class="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-accent-cyan"></i>
+              <span>Model Name</span>
+            </span>
+            <span class="text-[10px] text-zinc-500 font-mono">Custom or Preset</span>
           </label>
-          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-accent-cyan">
+          <div class="relative">
+            <input type="text" id="model-input" list="model-suggestions" placeholder="llama-3.3-70b-versatile" class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-accent-cyan">
+            <datalist id="model-suggestions">
+              <!-- Dynamically populated based on provider -->
+            </datalist>
+          </div>
+          <!-- Quick Preset Pills -->
+          <div id="quick-model-pills" class="flex flex-wrap gap-1.5 mt-2">
+            <!-- Dynamically populated -->
+          </div>
         </div>
+
+        <!-- Custom Base URL (Visible for Custom Provider) -->
+        <div id="custom-url-container" class="hidden">
+          <label class="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="globe" class="w-3.5 h-3.5 text-accent-violet"></i>
+              <span>Base URL (OpenAI-Compatible)</span>
+            </span>
+            <span class="text-[10px] text-zinc-500 font-mono">e.g. http://localhost:11434/v1</span>
+          </label>
+          <input type="text" id="custom-url-input" placeholder="http://localhost:11434/v1" class="w-full px-3 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-accent-violet">
+        </div>
+
+        <!-- API Key Field -->
+        <div>
+          <label class="block text-xs font-mono text-zinc-300 mb-1.5 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>API Key</span>
+            </span>
+            <a id="get-key-link" href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-brand-400 hover:underline flex items-center space-x-1">
+              <span>Get Free Key</span>
+              <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+            </a>
+          </label>
+          <div class="relative flex items-center">
+            <input type="password" id="api-key-input" placeholder="Enter API key..." class="w-full pl-3 pr-10 py-2 text-xs font-mono bg-dark-bg border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-400">
+            <button id="toggle-key-visibility-btn" type="button" class="absolute right-2.5 text-zinc-500 hover:text-zinc-300 p-1">
+              <i id="toggle-key-icon" data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <p id="key-hint" class="text-[10px] text-zinc-500 font-mono mt-1">Groq offers 100% free API keys without requiring any credit card.</p>
+        </div>
+
       </div>
 
-      <div class="mt-6 flex justify-end space-x-3">
-        <button id="save-keys-btn" class="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-brand-400 hover:bg-brand-500 text-zinc-950 transition">
-          Save Locally
+      <!-- Modal Footer -->
+      <div class="mt-6 pt-4 border-t border-dark-border flex items-center justify-between gap-3">
+        <button id="test-connection-btn" class="px-3.5 py-2 text-xs font-mono rounded-lg bg-dark-elevated hover:bg-dark-hover text-zinc-300 hover:text-white border border-dark-border transition flex items-center space-x-1.5">
+          <i data-lucide="activity" class="w-3 h-3 text-brand-400"></i>
+          <span id="test-btn-text">Test Model</span>
         </button>
+
+        <div class="flex items-center space-x-2">
+          <button id="reset-settings-btn" class="px-3 py-2 text-xs font-mono text-zinc-400 hover:text-rose-400 transition">
+            Reset
+          </button>
+          <button id="save-settings-btn" class="px-4 py-2 text-xs font-mono font-semibold rounded-lg bg-brand-400 hover:bg-brand-500 text-zinc-950 transition flex items-center space-x-1.5 shadow-md shadow-brand-500/20">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Save Settings</span>
+          </button>
+        </div>
       </div>
+
     </div>
   </div>
 

@@ -25,10 +25,11 @@ Developers spend countless hours parsing cryptic terminal crashes, segmentation 
 
 ## 🛠️ Key Features
 
+- **🌐 Universal Multi-Provider AI:** Connect seamlessly with **OpenRouter Free Models** (`gemini-2.0-flash-exp:free`, `llama-3.3-70b-instruct:free`, `deepseek-r1:free`), **Groq LPUs**, **Google Gemini**, **OpenAI**, or **Custom Local Endpoints (Ollama/LM Studio)**.
 - **🎯 Instant Root-Cause Analysis:** Pinpoint the exact runtime reason behind obscure errors (Node.js, TypeScript, Python FastAPI, Go panics, Docker OOM 137).
-- **⚡ Interactive Split-Screen Sandbox:** Test stack traces live with preset samples or custom terminal inputs.
-- **🛡️ Bring Your Own Key (BYOK):** Seamlessly plug in free Groq or Gemini API keys, stored solely in your browser's local storage.
-- **📋 1-Click Patch Application:** Copy formatted unified diffs ready for `git apply patch.diff` or GitHub PR creation.
+- **⚡ Interactive Split-Screen Sandbox:** Test stack traces live with preset samples or custom terminal inputs with real-time character/line counters.
+- **🛡️ 100% Client-Side Privacy (BYOK):** Keys are saved strictly in `localStorage`. Zero server telemetry.
+- **📋 1-Click Patch Application:** Copy formatted unified diffs ready for `git apply patch.diff` with instant toast notification.
 - **✨ Silicon Valley Dark Aesthetic:** Engineered with Raycast / Linear aesthetic (Tailwind CSS, glassmorphism, JetBrains Mono typography, Lucide icons).
 
 ---

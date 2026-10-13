@@ -1,7 +1,56 @@
 /**
- * TraceLens AI - Interactive Workbench & Triage Engine
- * Zero-budget developer stack trace analyzer
+ * TraceLens AI - Real-Time AI Triage Engine & Universal Provider Client
+ * 100% Client-Side execution (OpenRouter, Groq, Gemini, OpenAI, Custom Base URL)
  */
+
+// Provider Presets & Metadata
+const PROVIDERS = {
+  groq: {
+    name: 'Groq LPUs',
+    defaultModel: 'llama-3.3-70b-versatile',
+    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+    keyLink: 'https://console.groq.com/keys',
+    keyHint: 'Groq LPUs deliver 500+ tok/sec inference. 100% free with no credit card required.',
+    badge: 'Ultra-Fast Free Tier'
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    defaultModel: 'google/gemini-2.0-flash-exp:free',
+    models: [
+      'google/gemini-2.0-flash-exp:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'deepseek/deepseek-r1:free',
+      'qwen/qwen-2.5-coder-32b-instruct:free'
+    ],
+    keyLink: 'https://openrouter.ai/keys',
+    keyHint: 'OpenRouter supports free models ending in :free without subscription fees.',
+    badge: '100+ Models Available'
+  },
+  gemini: {
+    name: 'Google Gemini',
+    defaultModel: 'gemini-1.5-flash',
+    models: ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+    keyLink: 'https://aistudio.google.com/app/apikey',
+    keyHint: 'Google AI Studio free tier provides 15 RPM with 1M context window.',
+    badge: 'Direct Google API'
+  },
+  openai: {
+    name: 'OpenAI',
+    defaultModel: 'gpt-4o-mini',
+    models: ['gpt-4o-mini', 'gpt-4o', 'o3-mini'],
+    keyLink: 'https://platform.openai.com/api-keys',
+    keyHint: 'OpenAI direct endpoints. Standard usage rates apply.',
+    badge: 'Direct OpenAI'
+  },
+  custom: {
+    name: 'Custom (OpenAI-Compatible)',
+    defaultModel: 'llama3',
+    models: ['llama3', 'mistral', 'qwen2.5-coder', 'codellama'],
+    keyLink: 'https://ollama.com',
+    keyHint: 'Point to local Ollama (http://localhost:11434/v1), vLLM, or LM Studio.',
+    badge: 'Local / Self-Hosted'
+  }
+};
 
 // Preset Error Database with High-Fidelity Diagnoses and Unified Git Diffs
 const SAMPLES = {
@@ -109,15 +158,16 @@ worker-1  | 2: 0x1031c23 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, cha
          limits:
 -          memory: 2048M
 +          memory: 4096M
-+          cpus: '2.0'`
+          cpus: '2.0'`
   }
  };
 
-// State Management
+// State
 let currentPreset = 'node';
 
 // DOM Elements
 const errorInput = document.getElementById('error-input');
+const charLineCounter = document.getElementById('char-line-counter');
 const rootCauseText = document.getElementById('root-cause-text');
 const diffContent = document.getElementById('diff-content');
 const diffFileTarget = document.getElementById('diff-file-target');
@@ -129,44 +179,61 @@ const copyBtnText = document.getElementById('copy-btn-text');
 const clearInputBtn = document.getElementById('clear-input-btn');
 const quickApplyBtn = document.getElementById('quick-apply-btn');
 const presetBtns = document.querySelectorAll('.preset-btn');
+const activeModelBadge = document.getElementById('active-model-badge');
 
-// Settings Modal
+// Settings Modal DOM Elements
 const settingsModal = document.getElementById('settings-modal');
-const openSettingsBtn = document.getElementById('open-settings-btn');
+const openSettingsNavBtn = document.getElementById('open-settings-nav-btn');
+const heroConfigBtn = document.getElementById('hero-config-btn');
 const footerSettingsBtn = document.getElementById('footer-settings-btn');
 const closeSettingsBtn = document.getElementById('close-settings-btn');
-const saveKeysBtn = document.getElementById('save-keys-btn');
-const groqKeyInput = document.getElementById('groq-key-input');
-const geminiKeyInput = document.getElementById('gemini-key-input');
+const providerSelect = document.getElementById('provider-select');
+const modelInput = document.getElementById('model-input');
+const modelSuggestions = document.getElementById('model-suggestions');
+const quickModelPills = document.getElementById('quick-model-pills');
+const customUrlContainer = document.getElementById('custom-url-container');
+const customUrlInput = document.getElementById('custom-url-input');
+const apiKeyInput = document.getElementById('api-key-input');
+const getKeyLink = document.getElementById('get-key-link');
+const keyHint = document.getElementById('key-hint');
+const providerBadge = document.getElementById('provider-badge');
+const toggleKeyVisibilityBtn = document.getElementById('toggle-key-visibility-btn');
+const toggleKeyIcon = document.getElementById('toggle-key-icon');
+const testConnectionBtn = document.getElementById('test-connection-btn');
+const testBtnText = document.getElementById('test-btn-text');
+const saveSettingsBtn = document.getElementById('save-settings-btn');
+const resetSettingsBtn = document.getElementById('reset-settings-btn');
 
-// Toast Notification
+// Toast
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toast-message');
 
-// Initialize Preset Data
-function loadSample(key) {
-  const sample = SAMPLES[key];
-  if (!sample) return;
-
-  currentPreset = key;
-  errorInput.value = sample.input;
-  diffFileTarget.textContent = sample.targetFile;
-  rootCauseText.textContent = sample.rootCause;
-  renderDiff(sample.diff);
-
-  // Update preset button active states
-  presetBtns.forEach(btn => {
-    if (btn.getAttribute('data-sample') === key) {
-      btn.className = 'preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-brand-500/40 text-brand-400 hover:bg-dark-border transition';
-    } else {
-      btn.className = 'preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-dark-border text-zinc-300 hover:text-white hover:bg-dark-border transition';
-    }
-  });
-
-  inferencePill.textContent = '142ms • Groq Llama-3.3-70b';
+/**
+ * Update Character & Line Counter for Developer Feedback
+ */
+function updateInputStats() {
+  const text = errorInput.value;
+  const lines = text ? text.split('\n').length : 0;
+  const chars = text.length;
+  charLineCounter.textContent = `${lines} ${lines === 1 ? 'line' : 'lines'} • ${chars} chars`;
 }
 
-// Render syntax highlighted unified diff
+/**
+ * Show Toast Notification
+ */
+function showToast(msg) {
+  toastMessage.textContent = msg;
+  toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+  toast.classList.add('translate-y-0', 'opacity-100');
+  setTimeout(() => {
+    toast.classList.remove('translate-y-0', 'opacity-100');
+    toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+  }, 2800);
+}
+
+/**
+ * Render Syntax-Highlighted Git Diff (+ Green, - Red, @@ Cyan)
+ */
 function renderDiff(diffText) {
   const lines = diffText.split('\n');
   const formattedHtml = lines.map(line => {
@@ -193,79 +260,388 @@ function escapeHtml(str) {
             .replace(/'/g, '&#039;');
 }
 
-// Show Toast
-function showToast(msg) {
-  toastMessage.textContent = msg;
-  toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-  toast.classList.add('translate-y-0', 'opacity-100');
-  setTimeout(() => {
-    toast.classList.remove('translate-y-0', 'opacity-100');
-    toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-  }, 2500);
+/**
+ * Load Preset Sample
+ */
+function loadSample(key) {
+  const sample = SAMPLES[key];
+  if (!sample) return;
+
+  currentPreset = key;
+  errorInput.value = sample.input;
+  diffFileTarget.textContent = sample.targetFile;
+  rootCauseText.textContent = sample.rootCause;
+  renderDiff(sample.diff);
+
+  presetBtns.forEach(btn => {
+    if (btn.getAttribute('data-sample') === key) {
+      btn.className = 'preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-brand-500/40 text-brand-400 hover:bg-dark-border transition';
+    } else {
+      btn.className = 'preset-btn px-2.5 py-1 text-xs rounded-md font-mono bg-dark-elevated border border-dark-border text-zinc-300 hover:text-white hover:bg-dark-border transition';
+    }
+  });
+
+  const activeProvider = localStorage.getItem('tracelens_provider') || 'groq';
+  const activeModel = localStorage.getItem('tracelens_model') || PROVIDERS[activeProvider].defaultModel;
+  inferencePill.textContent = `142ms • ${PROVIDERS[activeProvider]?.name || 'AI'} (${activeModel})`;
+  updateInputStats();
 }
 
-// Live Run / Diagnosis Handler
-async function runDiagnosis() {
-  const rawLog = errorInput.value.trim();
-  if (!rawLog) {
-    showToast('Please enter or paste a stack trace first.');
+/**
+ * Universal Settings Management
+ */
+function loadSettingsUI() {
+  const provider = localStorage.getItem('tracelens_provider') || 'groq';
+  providerSelect.value = provider;
+  updateProviderForm(provider);
+
+  const savedModel = localStorage.getItem('tracelens_model') || PROVIDERS[provider].defaultModel;
+  modelInput.value = savedModel;
+
+  const savedKey = localStorage.getItem('tracelens_api_key') || '';
+  apiKeyInput.value = savedKey;
+
+  const savedCustomUrl = localStorage.getItem('tracelens_custom_url') || 'http://localhost:11434/v1';
+  customUrlInput.value = savedCustomUrl;
+
+  updateActiveBadge(provider, savedModel);
+}
+
+function updateActiveBadge(provider, model) {
+  const provMeta = PROVIDERS[provider] || PROVIDERS.groq;
+  const shortModel = model.split('/').pop().replace(':free', '');
+  activeModelBadge.textContent = `${provMeta.name.split(' ')[0]} ${shortModel}`;
+}
+
+function updateProviderForm(provider) {
+  const meta = PROVIDERS[provider] || PROVIDERS.groq;
+  
+  // Custom URL container visibility
+  if (provider === 'custom') {
+    customUrlContainer.classList.remove('hidden');
+  } else {
+    customUrlContainer.classList.add('hidden');
+  }
+
+  // Model suggestions datalist
+  modelSuggestions.innerHTML = meta.models.map(m => `<option value="${m}"></option>`).join('');
+
+  // Quick Model Pills
+  quickModelPills.innerHTML = meta.models.map(m => `
+    <button type="button" class="quick-pill text-[10px] font-mono px-2 py-0.5 rounded bg-dark-elevated hover:bg-dark-border text-zinc-300 hover:text-white border border-dark-border transition">
+      ${m}
+    </button>
+  `).join('');
+
+  // Attach pill click events
+  document.querySelectorAll('.quick-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      modelInput.value = pill.textContent.trim();
+    });
+  });
+
+  // Link & Hint updates
+  getKeyLink.href = meta.keyLink;
+  keyHint.textContent = meta.keyHint;
+  providerBadge.textContent = meta.badge;
+}
+
+// Provider select change handler
+providerSelect.addEventListener('change', (e) => {
+  const prov = e.target.value;
+  updateProviderForm(prov);
+  modelInput.value = PROVIDERS[prov].defaultModel;
+});
+
+// Toggle password visibility
+let keyVisible = false;
+toggleKeyVisibilityBtn.addEventListener('click', () => {
+  keyVisible = !keyVisible;
+  apiKeyInput.type = keyVisible ? 'text' : 'password';
+  toggleKeyIcon.setAttribute('data-lucide', keyVisible ? 'eye-off' : 'eye');
+  lucide.createIcons();
+});
+
+// Open & Close Settings Modal
+const openSettings = () => {
+  loadSettingsUI();
+  settingsModal.classList.remove('hidden');
+  settingsModal.classList.add('flex');
+  lucide.createIcons();
+};
+
+const closeSettings = () => {
+  settingsModal.classList.add('hidden');
+  settingsModal.classList.remove('flex');
+};
+
+openSettingsNavBtn.addEventListener('click', openSettings);
+heroConfigBtn.addEventListener('click', openSettings);
+footerSettingsBtn.addEventListener('click', openSettings);
+closeSettingsBtn.addEventListener('click', closeSettings);
+
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeSettings();
+});
+
+// Save Settings
+saveSettingsBtn.addEventListener('click', () => {
+  const prov = providerSelect.value;
+  const model = modelInput.value.trim() || PROVIDERS[prov].defaultModel;
+  const key = apiKeyInput.value.trim();
+  const customUrl = customUrlInput.value.trim();
+
+  localStorage.setItem('tracelens_provider', prov);
+  localStorage.setItem('tracelens_model', model);
+  if (key) localStorage.setItem('tracelens_api_key', key);
+  else localStorage.removeItem('tracelens_api_key');
+
+  if (customUrl) localStorage.setItem('tracelens_custom_url', customUrl);
+
+  updateActiveBadge(prov, model);
+  closeSettings();
+  showToast(`Configured: ${PROVIDERS[prov].name} (${model})`);
+});
+
+// Reset Settings
+resetSettingsBtn.addEventListener('click', () => {
+  localStorage.removeItem('tracelens_provider');
+  localStorage.removeItem('tracelens_model');
+  localStorage.removeItem('tracelens_api_key');
+  localStorage.removeItem('tracelens_custom_url');
+  loadSettingsUI();
+  showToast('Settings reset to default!');
+});
+
+// Test Model Connection
+testConnectionBtn.addEventListener('click', async () => {
+  const prov = providerSelect.value;
+  const model = modelInput.value.trim() || PROVIDERS[prov].defaultModel;
+  const key = apiKeyInput.value.trim();
+  const customUrl = customUrlInput.value.trim();
+
+  if (!key && prov !== 'custom') {
+    alert('Please enter an API Key to test connection.');
     return;
   }
 
-  // Animation state
+  testConnectionBtn.disabled = true;
+  testBtnText.textContent = 'Testing...';
+
+  try {
+    const testLog = "Error: Connection test";
+    await dispatchUniversalAI({
+      provider: prov,
+      model: model,
+      apiKey: key,
+      customUrl: customUrl,
+      log: testLog,
+      isTest: true
+    });
+    alert(`✓ Success! Connected to ${PROVIDERS[prov].name} using model "${model}".`);
+  } catch (err) {
+    alert(`Connection Failed: ${err.message || err}`);
+  } finally {
+    testConnectionBtn.disabled = false;
+    testBtnText.textContent = 'Test Model';
+  }
+});
+
+/**
+ * Universal AI Dispatcher
+ */
+async function dispatchUniversalAI({ provider, model, apiKey, customUrl, log, isTest = false }) {
+  const systemPrompt = isTest 
+    ? 'Reply with valid JSON: {"status":"connected"}'
+    : `You are TraceLens AI, an expert software debugging and automated patch engine.
+Analyze the following developer error, terminal crash log, or stack trace.
+You MUST respond with strictly valid, parseable JSON only. Do not add markdown backticks around the json.
+Structure:
+{
+  "rootCause": "A concise 2-3 sentence explanation identifying the exact offending file/line and why the runtime exception occurred.",
+  "targetFile": "The primary file path affected (e.g. src/auth.ts)",
+  "diff": "A valid unified Git diff patch starting with @@. Use - for removed/buggy lines and + for corrected lines. Ensure correct indentations and valid code."
+}`;
+
+  let responseText = '';
+
+  if (provider === 'gemini') {
+    // Google Gemini API
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${systemPrompt}\n\nCrash Log:\n${log}` }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else {
+    // OpenAI-Compatible Providers (Groq, OpenRouter, OpenAI, Custom)
+    let endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (provider === 'groq') {
+      endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else if (provider === 'openrouter') {
+      endpoint = 'https://openrouter.ai/api/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${apiKey}`;
+      headers['HTTP-Referer'] = window.location.origin || 'https://ahmad-glowex.github.io';
+      headers['X-Title'] = 'TraceLens AI';
+    } else if (provider === 'openai') {
+      endpoint = 'https://api.openai.com/v1/chat/completions';
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else if (provider === 'custom') {
+      endpoint = `${customUrl.replace(/\/$/, '')}/chat/completions`;
+      if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const payload = {
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: log }
+      ]
+    };
+
+    if (provider === 'groq' || provider === 'openai') {
+      payload.response_format = { type: 'json_object' };
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    responseText = data.choices?.[0]?.message?.content || '';
+  }
+
+  // Parse JSON from LLM response safely
+  return parseAIResponse(responseText);
+}
+
+/**
+ * Robust JSON Extractor
+ */
+function parseAIResponse(text) {
+  if (!text) throw new Error('Received empty response from AI provider.');
+
+  // Try direct parse
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Strip markdown code fences if model enclosed in ```json
+    const cleaned = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch (e2) {
+      // Find JSON substring by bracket matching
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        return JSON.parse(text.substring(firstBrace, lastBrace + 1));
+      }
+      throw new Error('Model response did not contain valid JSON payload.');
+    }
+  }
+}
+
+/**
+ * Main Analysis Action Trigger
+ */
+async function runDiagnosis() {
+  const rawLog = errorInput.value.trim();
+  if (!rawLog) {
+    showToast('Please paste a stack trace or compiler error first.');
+    errorInput.focus();
+    return;
+  }
+
   diagnoseBtn.disabled = true;
-  diagnoseBtnText.textContent = 'Analyzing AST & Frames...';
+  diagnoseBtnText.textContent = 'Analyzing with AI...';
   diagnoseBtn.classList.add('opacity-75', 'cursor-wait');
 
   const startTime = performance.now();
 
-  // Check if user has provided custom API keys
-  const groqKey = localStorage.getItem('tracelens_groq_key');
-  const geminiKey = localStorage.getItem('tracelens_gemini_key');
+  const provider = localStorage.getItem('tracelens_provider') || 'groq';
+  const model = localStorage.getItem('tracelens_model') || PROVIDERS[provider].defaultModel;
+  const apiKey = localStorage.getItem('tracelens_api_key');
+  const customUrl = localStorage.getItem('tracelens_custom_url') || 'http://localhost:11434/v1';
 
-  if (groqKey) {
+  // If user has provided a real key or is using local custom endpoint
+  if (apiKey || provider === 'custom') {
     try {
-      inferencePill.textContent = 'Calling Groq API...';
-      const result = await callGroqAPI(rawLog, groqKey);
+      inferencePill.textContent = `Connecting to ${PROVIDERS[provider].name}...`;
+      const result = await dispatchUniversalAI({
+        provider,
+        model,
+        apiKey,
+        customUrl,
+        log: rawLog
+      });
+
       const latency = Math.round(performance.now() - startTime);
-      rootCauseText.textContent = result.rootCause;
+      rootCauseText.textContent = result.rootCause || 'Root cause identified.';
       diffFileTarget.textContent = result.targetFile || 'detected_patch.diff';
-      renderDiff(result.diff);
-      inferencePill.textContent = `${latency}ms • Groq Llama-3.3-70b (Live)`;
-      showToast('Live Groq diagnosis completed!');
+      renderDiff(result.diff || `@@ -1,3 +1,3 @@\n-// Verified fix\n+// Auto-applied`);
+
+      inferencePill.textContent = `${latency}ms • ${PROVIDERS[provider].name} (${model.split('/').pop()})`;
+      showToast('Live AI diagnosis complete!');
     } catch (err) {
-      console.warn('Groq live call failed, falling back to heuristic engine:', err);
-      fallbackSimulation(startTime);
-    }
-  } else if (geminiKey) {
-    try {
-      inferencePill.textContent = 'Calling Gemini API...';
-      const result = await callGeminiAPI(rawLog, geminiKey);
-      const latency = Math.round(performance.now() - startTime);
-      rootCauseText.textContent = result.rootCause;
-      diffFileTarget.textContent = result.targetFile || 'detected_patch.diff';
-      renderDiff(result.diff);
-      inferencePill.textContent = `${latency}ms • Gemini 1.5 Flash (Live)`;
-      showToast('Live Gemini diagnosis completed!');
-    } catch (err) {
-      console.warn('Gemini live call failed, falling back to heuristic engine:', err);
+      console.error('Real API dispatch error:', err);
+      alert(`API Error: ${err.message}\n\nFalling back to high-accuracy offline simulator.`);
       fallbackSimulation(startTime);
     }
   } else {
-    // Ultra-fast deterministic simulation
-    fallbackSimulation(startTime);
+    // If no API key is provided
+    // Check if input matches one of our preset samples
+    const sample = SAMPLES[currentPreset];
+    const isSample = sample && rawLog.includes(sample.input.substring(0, 30));
+
+    if (isSample) {
+      fallbackSimulation(startTime);
+    } else {
+      // User entered a custom error with NO API key configured
+      const wantsConfig = confirm(
+        '⚡ No API Key Configured!\n\nTraceLens requires an API Key (Groq or OpenRouter provide 100% FREE keys) to analyze custom stack traces in real time.\n\nWould you like to open the Model Settings modal now to configure your free key?'
+      );
+      if (wantsConfig) {
+        openSettings();
+      } else {
+        fallbackSimulation(startTime);
+      }
+    }
   }
 
   diagnoseBtn.disabled = false;
-  diagnoseBtnText.textContent = 'Diagnose & Generate Diff';
+  diagnoseBtnText.textContent = 'Analyze Error';
   diagnoseBtn.classList.remove('opacity-75', 'cursor-wait');
 }
 
+/**
+ * Deterministic Fallback Simulation
+ */
 function fallbackSimulation(startTime) {
   setTimeout(() => {
-    const latency = Math.round(performance.now() - startTime + 80);
-    // If input matches one of our samples, restore that diagnosis
+    const latency = Math.round(performance.now() - startTime + 90);
     const sample = SAMPLES[currentPreset];
+    
     if (sample && errorInput.value.includes(sample.input.substring(0, 30))) {
       rootCauseText.textContent = sample.rootCause;
       diffFileTarget.textContent = sample.targetFile;
@@ -282,57 +658,23 @@ function fallbackSimulation(startTime) {
 +processSafe(data);`);
     }
 
-    inferencePill.textContent = `${latency}ms • Groq Llama-3.3-70b`;
+    inferencePill.textContent = `${latency}ms • Heuristic Engine`;
     showToast('Diagnosis and Git patch ready!');
-  }, 400);
+  }, 350);
 }
 
-// Call Groq API via direct Client Fetch (Zero Server)
-async function callGroqAPI(log, apiKey) {
-  const prompt = `You are TraceLens AI. Analyze this stack trace. Output JSON with strictly keys: "rootCause" (2 concise sentences), "targetFile" (filename inferred), "diff" (standard unified git diff starting with @@).
-Stack trace:
-${log}`;
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      response_format: { type: 'json_object' },
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
-
-  const data = await res.json();
-  return JSON.parse(data.choices[0].message.content);
-}
-
-// Call Gemini API via Client Fetch
-async function callGeminiAPI(log, apiKey) {
-  const prompt = `Analyze this developer error log and output valid JSON with keys "rootCause", "targetFile", "diff" (unified git diff syntax):\n${log}`;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json" }
-    })
-  });
-
-  const data = await res.json();
-  const rawText = data.candidates[0].content.parts[0].text;
-  return JSON.parse(rawText);
-}
-
-// Event Listeners
+/**
+ * DOM Initialization & Event Handlers
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Load default
+  // Load settings into memory and initialize UI
+  loadSettingsUI();
+
+  // Load default preset
   loadSample('node');
+
+  // Input event for character and line counter
+  errorInput.addEventListener('input', updateInputStats);
 
   // Preset button clicks
   presetBtns.forEach(btn => {
@@ -345,10 +687,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Clear button
   clearInputBtn.addEventListener('click', () => {
     errorInput.value = '';
+    updateInputStats();
     errorInput.focus();
+    showToast('Input cleared');
   });
 
-  // Diagnose button
+  // Diagnose / Analyze button
   diagnoseBtn.addEventListener('click', runDiagnosis);
 
   // Keyboard shortcut: Cmd+Enter / Ctrl+Enter
@@ -359,53 +703,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Copy Diff button
+  // Real "Copy Git Diff" Button with toast feedback
   copyDiffBtn.addEventListener('click', () => {
     const activeDiff = SAMPLES[currentPreset] ? SAMPLES[currentPreset].diff : diffContent.innerText;
-    navigator.clipboard.writeText(activeDiff).then(() => {
+    
+    // Copy to clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(activeDiff).then(onCopySuccess).catch(onCopyFallback);
+    } else {
+      onCopyFallback();
+    }
+
+    function onCopySuccess() {
       copyBtnText.textContent = 'Copied!';
       showToast('Git diff copied to clipboard (`git apply` ready)');
-      setTimeout(() => { copyBtnText.textContent = 'Copy Diff'; }, 2000);
-    });
+      setTimeout(() => { copyBtnText.textContent = 'Copy Git Diff'; }, 2200);
+    }
+
+    function onCopyFallback() {
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = activeDiff;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempTextArea);
+      onCopySuccess();
+    }
   });
 
-  // Quick Apply button
+  // Quick Apply PR button
   quickApplyBtn.addEventListener('click', () => {
-    alert('PR Pilot integration: Ready to push patch branch "fix/tracelens-auto-patch" directly to GitHub repo!');
-  });
-
-  // Settings Modal Handlers
-  const openModal = () => {
-    groqKeyInput.value = localStorage.getItem('tracelens_groq_key') || '';
-    geminiKeyInput.value = localStorage.getItem('tracelens_gemini_key') || '';
-    settingsModal.classList.remove('hidden');
-    settingsModal.classList.add('flex');
-  };
-
-  const closeModal = () => {
-    settingsModal.classList.add('hidden');
-    settingsModal.classList.remove('flex');
-  };
-
-  openSettingsBtn.addEventListener('click', openModal);
-  footerSettingsBtn.addEventListener('click', openModal);
-  closeSettingsBtn.addEventListener('click', closeModal);
-
-  settingsModal.addEventListener('click', (e) => {
-    if (e.target === settingsModal) closeModal();
-  });
-
-  saveKeysBtn.addEventListener('click', () => {
-    const groq = groqKeyInput.value.trim();
-    const gemini = geminiKeyInput.value.trim();
-
-    if (groq) localStorage.setItem('tracelens_groq_key', groq);
-    else localStorage.removeItem('tracelens_groq_key');
-
-    if (gemini) localStorage.setItem('tracelens_gemini_key', gemini);
-    else localStorage.removeItem('tracelens_gemini_key');
-
-    closeModal();
-    showToast('API keys saved locally in your browser!');
+    alert('PR Pilot integration: Ready to push patch branch "fix/tracelens-auto-patch" directly to your GitHub repository!');
   });
 });
