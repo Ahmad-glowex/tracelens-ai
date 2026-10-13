@@ -10,6 +10,7 @@ body {
   background-color: #08080b;
   color: #f3f4f6;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
 }
 
 .bg-grid-pattern {
@@ -20,7 +21,7 @@ body {
 }
 
 .radial-glow {
-  background: radial-gradient(circle 600px at 50% -100px, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.05), transparent 70%);
+  background: radial-gradient(circle 700px at 50% -120px, rgba(16, 185, 129, 0.18), rgba(6, 182, 212, 0.08), transparent 70%);
 }
 
 .glass-card {
@@ -32,6 +33,15 @@ body {
 
 .glass-card:hover {
   border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Hide scrollbar for horizontal mobile pill carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom scrollbars */
