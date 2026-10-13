@@ -10,7 +10,7 @@ export default function PrivacyPage() {
             <div className="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center">
               <Zap className="w-4 h-4 text-brand-400" />
             </div>
-            <span className="text-lg font-bold text-white">TraceLens AI</span>
+            <span className="text-lg font-bold text-white">RunFix AI</span>
           </Link>
           <Link
             href="/"
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
                 1. Overview & Zero Telemetry
               </h2>
               <p>
-                At TraceLens AI, operated by <strong>Raihan LLC</strong>, we are developers building
+                At RunFix AI, operated by <strong>Raihan LLC</strong>, we are developers building
                 for developers. We recognize that error logs and stack traces often contain sensitive
                 directory paths and code snippets. Our core architectural philosophy is built on
                 strict privacy and zero centralized code telemetry.
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
                 <br />
                 United States
                 <br />
-                Email: privacy@tracelens.ai
+                Email: founder@runfix.live
               </div>
             </section>
           </div>

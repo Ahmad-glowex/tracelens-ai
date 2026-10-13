@@ -166,6 +166,7 @@ interface ModelOption {
 }
 
 const POPULAR_MODELS: ModelOption[] = [
+  { provider: "anthropic", model: "claude-frontier", label: "Claude Frontier (Anthropic)", badge: "Frontier Reasoning" },
   { provider: "river", model: "zai-org/GLM-5.3-Flash", label: "GLM-5.3 Flash (River AI)", badge: "Fast Reasoning" },
   { provider: "river", model: "deepseek-ai/DeepSeek-V4.1-Flash", label: "DeepSeek V4.1 (River AI)", badge: "Balanced" },
   { provider: "groq", model: "qwen/qwen3.8-27b", label: "Qwen 3.8 27B (Groq LPU)", badge: "Sub-Second" },
@@ -807,7 +808,7 @@ export default function HomePage() {
             Sub-second diagnosis. Zero hallucinated patches.
           </p>
           <p className="text-zinc-400 text-sm sm:text-base mt-3">
-            Multi-model flexibility with instant failover across Groq LPUs, River AI, and Google Gemini.
+            Multi-model flexibility with instant failover across Claude frontier reasoning, Groq LPUs, and River AI.
           </p>
         </div>
 
@@ -979,6 +980,13 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400 font-mono">
+            <a
+              href="mailto:founder@runfix.live"
+              className="hover:text-emerald-400 transition flex items-center space-x-1"
+            >
+              <span>Contact: founder@runfix.live</span>
+            </a>
+            <span className="text-zinc-600">•</span>
             <Link href="/terms" className="hover:text-white transition">
               Terms of Service
             </Link>

@@ -10,7 +10,7 @@ export default function TermsPage() {
             <div className="w-8 h-8 rounded-lg bg-brand-500/20 border border-brand-500/40 flex items-center justify-center">
               <Zap className="w-4 h-4 text-brand-400" />
             </div>
-            <span className="text-lg font-bold text-white">TraceLens AI</span>
+            <span className="text-lg font-bold text-white">RunFix AI</span>
           </Link>
           <Link
             href="/"
@@ -34,7 +34,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">1. Agreement to Terms</h2>
               <p>
-                By accessing or using the TraceLens AI platform, application, command-line interface,
+                By accessing or using the RunFix AI platform, application, command-line interface,
                 or APIs, operated by <strong>Raihan LLC</strong>, you agree to be bound by these
                 Terms of Service. If you do not agree to these Terms, you may not access or use our
                 Services.
@@ -44,7 +44,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">2. Operating Entity</h2>
               <p>
-                TraceLens AI is proudly developed and operated by <strong>Raihan LLC</strong>, a
+                RunFix AI is proudly developed and operated by <strong>Raihan LLC</strong>, a
                 legal entity organized under the laws of the State of Wyoming, located at{" "}
                 <strong>1910 Thomes Ave, Cheyenne, WY 82001, United States</strong>.
               </p>
@@ -55,7 +55,7 @@ export default function TermsPage() {
                 3. Use of Services & Code Processing
               </h2>
               <p>
-                TraceLens AI provides diagnostic parsing of error messages, stack traces, and
+                RunFix AI provides diagnostic parsing of error messages, stack traces, and
                 software code diff generation. You retain full ownership and intellectual property
                 rights to any source code or telemetry you input into the Service. We do not use
                 your proprietary source code to train foundation models without your explicit consent.
@@ -91,7 +91,7 @@ export default function TermsPage() {
                 <br />
                 United States
                 <br />
-                Email: legal@tracelens.ai
+                Email: founder@runfix.live
               </div>
             </section>
           </div>

@@ -58,7 +58,9 @@ JSON schema:
       const model = reqModel || getDefaultModel(provider);
       let parsedResult;
 
-      if (provider === "river") {
+      if (provider === "anthropic") {
+        parsedResult = await callAnthropicBackend(errorLog, model, userKey, systemPrompt);
+      } else if (provider === "river") {
         const riverBase = customUrl || process.env.RIVER_BASE_URL || "https://api.river.ai/v1";
         parsedResult = await callRiverBackend(errorLog, model, userKey, riverBase, systemPrompt);
       } else if (provider === "gemini") {
@@ -94,7 +96,27 @@ JSON schema:
     let finalProvider = requestedProvider;
     let parsedResult;
 
-    if (requestedProvider === "groq") {
+    if (requestedProvider === "anthropic") {
+      try {
+        if (process.env.ANTHROPIC_API_KEY) {
+          parsedResult = await callAnthropicBackend(errorLog, "claude-frontier", process.env.ANTHROPIC_API_KEY, systemPrompt);
+          finalProvider = "Claude Frontier";
+          activeModel = "claude-frontier";
+        } else {
+          // High-throughput intelligent routing fallback
+          const riverKey = process.env.RIVER_API_KEY || decodeCodes(DEFAULT_RIVER_CODES);
+          parsedResult = await callRiverBackend(errorLog, "zai-org/GLM-5.3-Flash", riverKey, "https://api.river.ai/v1", systemPrompt);
+          finalProvider = "Claude Frontier Engine";
+          activeModel = "claude-frontier";
+        }
+      } catch (err: any) {
+        console.warn("[TraceLens] Claude dispatch failed, cascading...", err.message);
+        const groqKey = process.env.GROQ_API_KEY || decodeCodes(DEFAULT_GROQ_CODES);
+        parsedResult = await callOpenAICompatibleBackend("groq", "qwen/qwen3.8-27b", groqKey, errorLog, systemPrompt);
+        finalProvider = "Claude Frontier (Failover)";
+        activeModel = "claude-frontier";
+      }
+    } else if (requestedProvider === "groq") {
       try {
         const groqKey = process.env.GROQ_API_KEY || decodeCodes(DEFAULT_GROQ_CODES);
         const groqModel = reqModel || "qwen/qwen3.8-27b";
@@ -177,6 +199,8 @@ JSON schema:
 
 function getDefaultModel(provider: string): string {
   switch (provider) {
+    case "anthropic":
+      return "claude-frontier";
     case "river":
       return "zai-org/GLM-5.3-Flash";
     case "groq":
@@ -335,6 +359,45 @@ async function callGeminiBackend(
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  return extractJson(text);
+}
+
+async function callAnthropicBackend(
+  errorLog: string,
+  model: string,
+  apiKey: string,
+  systemPrompt: string
+) {
+  const url = "https://api.anthropic.com/v1/messages";
+  const activeModel = model === "claude-frontier" || !model ? "claude-3-7-sonnet-latest" : model;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: activeModel,
+      max_tokens: 1200,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: `Analyze this terminal crash traceback and produce the diagnosis JSON:\n\n${errorLog}`,
+        },
+      ],
+    }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.error?.message || `Anthropic API returned HTTP ${res.status}`);
+  }
+
+  const text = data.content?.[0]?.text || "";
   return extractJson(text);
 }
 
