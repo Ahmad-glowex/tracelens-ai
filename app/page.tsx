@@ -373,7 +373,7 @@ export default function HomePage() {
                 </div>
               </div>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
-                TraceLens
+                RunFix
                 <span className="text-emerald-400 text-xs ml-1.5 font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
                   AI
                 </span>
@@ -475,7 +475,7 @@ export default function HomePage() {
         </h1>
 
         <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed font-normal">
-          Unhandled runtime exceptions, type panics, and container crashes resolved in seconds. TraceLens isolates offending frames and produces verified, <code className="text-emerald-400 font-mono">git apply</code> compatible diffs.
+          Unhandled runtime exceptions, type panics, and container crashes resolved in seconds. RunFix isolates offending frames and produces verified, <code className="text-emerald-400 font-mono">git apply</code> compatible diffs.
         </p>
 
         {/* Action CTAs */}
@@ -970,7 +970,7 @@ export default function HomePage() {
               <div className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
                 <Zap className="w-3.5 h-3.5 text-emerald-400" />
               </div>
-              <span className="text-sm font-bold text-white">TraceLens AI</span>
+              <span className="text-sm font-bold text-white">RunFix AI</span>
             </div>
             {/* MANDATORY EXACT LEGAL TEXT */}
             <p className="text-xs text-zinc-400 font-sans">
