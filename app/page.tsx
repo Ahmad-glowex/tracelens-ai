@@ -42,6 +42,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { scrubSensitiveData } from "../lib/scrubber";
+import { parseUnifiedDiff, cleanDiffText, type DiffLine } from "../lib/diffParser";
 
 // Preset Real-World Error Samples
 const SAMPLES: Record<
@@ -291,73 +292,14 @@ const POPULAR_MODELS: ModelOption[] = [
   { provider: "custom", model: "custom-model", label: "Custom OpenAI-Compatible", badge: "Self-Hosted" },
 ];
 
-interface DiffLine {
-  id: number;
-  type: "hunk" | "add" | "delete" | "context" | "header";
-  content: string;
-  oldNum?: number | string;
-  newNum?: number | string;
-}
-
-function parseUnifiedDiff(diff: string): DiffLine[] {
-  if (!diff) return [];
-  const lines = diff.split("\n");
-  const parsed: DiffLine[] = [];
-  let oldLine = 0;
-  let newLine = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
-    if (raw.startsWith("@@")) {
-      const match = raw.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-      if (match) {
-        oldLine = parseInt(match[1], 10);
-        newLine = parseInt(match[2], 10);
-      }
-      parsed.push({
-        id: i,
-        type: "hunk",
-        content: raw,
-        oldNum: "…",
-        newNum: "…",
-      });
-    } else if (raw.startsWith("---") || raw.startsWith("+++")) {
-      parsed.push({
-        id: i,
-        type: "header",
-        content: raw,
-        oldNum: "",
-        newNum: "",
-      });
-    } else if (raw.startsWith("+")) {
-      parsed.push({
-        id: i,
-        type: "add",
-        content: raw.substring(1),
-        oldNum: "",
-        newNum: newLine++,
-      });
-    } else if (raw.startsWith("-")) {
-      parsed.push({
-        id: i,
-        type: "delete",
-        content: raw.substring(1),
-        oldNum: oldLine++,
-        newNum: "",
-      });
-    } else {
-      const content = raw.startsWith(" ") ? raw.substring(1) : raw;
-      parsed.push({
-        id: i,
-        type: "context",
-        content: content,
-        oldNum: oldLine > 0 ? oldLine++ : "",
-        newNum: newLine > 0 ? newLine++ : "",
-      });
-    }
-  }
-  return parsed;
-}
+const PRESET_BADGES: Record<string, { tag: string; tagColor: string }> = {
+  next: { tag: "React/SSR", tagColor: "text-cyan-400 border-cyan-500/30 bg-cyan-500/10" },
+  node: { tag: "TypeError", tagColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  python: { tag: "FastAPI", tagColor: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  docker: { tag: "Exit 137", tagColor: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  go: { tag: "Panic", tagColor: "text-sky-400 border-sky-500/30 bg-sky-500/10" },
+  rust: { tag: "Bounds", tagColor: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
+};
 
 export default function HomePage() {
   const [currentPreset, setCurrentPreset] = useState("next");
@@ -425,7 +367,10 @@ export default function HomePage() {
   };
 
   const handleDownloadDiff = () => {
-    if (!diffText) return;
+    if (!diffText || !diffText.trim()) {
+      showToast("No diff patch available to download.");
+      return;
+    }
     const blob = new Blob([diffText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -451,10 +396,26 @@ export default function HomePage() {
     setDiffText(s.diff);
     setErrorMessage(null);
     setStatusPill(`Preset: ${s.label}`);
-    setMobileTab("input");
+    showToast(`Loaded preset: ${s.label}`);
+  };
+
+  const handleClear = () => {
+    setErrorInput("");
+    setDiffText("");
+    setDiffTarget("");
+    setRootCause("");
+    setErrorMessage(null);
+    setCurrentPreset("");
+    setStatusPill("Ready • Sub-Second Engine");
+    textareaRef.current?.focus();
+    showToast("Input buffer cleared");
   };
 
   const handleCopyDiff = () => {
+    if (!diffText || !diffText.trim()) {
+      showToast("No diff patch available to copy.");
+      return;
+    }
     navigator.clipboard.writeText(diffText).then(() => {
       setCopiedDiff(true);
       showToast("Git diff copied (`git apply` ready)");
@@ -558,6 +519,7 @@ export default function HomePage() {
       console.error("❌ [RunFix AI Error]:", err);
       setErrorMessage(err.message || "Failed to contact backend API route.");
       setStatusPill("Analysis Error");
+      setDiffText("");
       showToast(`⚠️ Error: ${err.message?.substring(0, 32)}...`);
     } finally {
       setIsAnalyzing(false);
@@ -786,19 +748,23 @@ export default function HomePage() {
               <span className="text-xs text-zinc-500 font-mono mr-1 shrink-0 font-medium">Presets:</span>
               {(["next", "node", "python", "docker", "go", "rust"] as const).map((key) => {
                 const sample = SAMPLES[key];
+                const meta = PRESET_BADGES[key];
                 const isActive = currentPreset === key;
                 return (
                   <button
                     key={key}
                     onClick={() => handleSelectPreset(key)}
-                    className={`px-3 py-1.5 text-xs rounded-lg font-mono shrink-0 transition-all duration-150 flex items-center space-x-1.5 ${
+                    className={`px-2.5 py-1.5 text-xs rounded-lg font-mono shrink-0 transition-all duration-150 flex items-center space-x-1.5 ${
                       isActive
                         ? "bg-zinc-800 border border-emerald-500/50 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/10"
                         : "bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800/80"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-zinc-600"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`} />
                     <span>{sample.label}</span>
+                    <span className={`text-[10px] px-1 py-0.5 rounded border hidden sm:inline ${meta.tagColor}`}>
+                      {meta.tag}
+                    </span>
                   </button>
                 );
               })}
@@ -923,9 +889,10 @@ export default function HomePage() {
                   
                   {/* Subtle Client Scrubber Active Indicator */}
                   <div
-                    className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono cursor-default"
-                    title="Client Scrubber Active: Sensitive API keys, database credentials, and tokens are scrubbed locally before network transit."
+                    className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-mono cursor-help transition hover:bg-emerald-500/15"
+                    title="Client Scrubber Active: Redacts 10 secret categories (OpenAI, Anthropic, AWS, GitHub tokens, DB passwords, JWTs) locally in browser memory before network transit."
                   >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="hidden sm:inline">Client Scrubber Active</span>
                     <span className="sm:hidden">Scrubber</span>
@@ -937,12 +904,9 @@ export default function HomePage() {
                     {lineCount} lines • {charCount} chars
                   </span>
                   <button
-                    onClick={() => {
-                      setErrorInput("");
-                      textareaRef.current?.focus();
-                    }}
-                    className="text-xs font-mono text-zinc-400 hover:text-rose-400 transition flex items-center space-x-1"
-                    title="Clear input buffer"
+                    onClick={handleClear}
+                    className="text-xs font-mono text-zinc-400 hover:text-rose-400 transition flex items-center space-x-1 p-1 rounded hover:bg-zinc-800"
+                    title="Clear input and patch buffer"
                   >
                     <Trash2 className="w-3 h-3" />
                     <span>Clear</span>
@@ -955,7 +919,10 @@ export default function HomePage() {
                 <textarea
                   ref={textareaRef}
                   value={errorInput}
-                  onChange={(e) => setErrorInput(e.target.value)}
+                  onChange={(e) => {
+                    setErrorInput(e.target.value);
+                    if (currentPreset) setCurrentPreset("");
+                  }}
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                       e.preventDefault();
@@ -1027,7 +994,12 @@ export default function HomePage() {
                 <div className="flex items-center space-x-1.5">
                   <button
                     onClick={handleDownloadDiff}
-                    className="text-xs font-mono px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700/80 transition flex items-center space-x-1.5 active:scale-95"
+                    disabled={!diffText.trim() || !!errorMessage}
+                    className={`text-xs font-mono px-2.5 py-1 rounded-md border transition flex items-center space-x-1.5 active:scale-95 ${
+                      !diffText.trim() || !!errorMessage
+                        ? "bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border-zinc-700/80"
+                    }`}
                     title="Download patch.diff file"
                   >
                     {downloadedDiff ? (
@@ -1041,7 +1013,12 @@ export default function HomePage() {
 
                   <button
                     onClick={handleCopyDiff}
-                    className="text-xs font-mono px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700/80 transition flex items-center space-x-1.5 active:scale-95"
+                    disabled={!diffText.trim() || !!errorMessage}
+                    className={`text-xs font-mono px-2.5 py-1 rounded-md border transition flex items-center space-x-1.5 active:scale-95 ${
+                      !diffText.trim() || !!errorMessage
+                        ? "bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border-zinc-700/80"
+                    }`}
                     title="Copy unified git diff to clipboard"
                   >
                     {copiedDiff ? (
@@ -1063,23 +1040,25 @@ export default function HomePage() {
                     <span className="text-zinc-500 text-[11px]">TARGET FILE:</span>
                     <span className="text-zinc-200 font-semibold truncate">{diffTarget || "auto-detected"}</span>
                   </div>
-                  <button
-                    onClick={handleCopyTargetFile}
-                    className="text-[11px] text-zinc-400 hover:text-emerald-400 transition flex items-center space-x-1 shrink-0 ml-2"
-                    title="Copy target file path"
-                  >
-                    {copiedTargetFile ? (
-                      <>
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        <span>Copy Path</span>
-                      </>
-                    )}
-                  </button>
+                  {diffTarget && (
+                    <button
+                      onClick={handleCopyTargetFile}
+                      className="text-[11px] text-zinc-400 hover:text-emerald-400 transition flex items-center space-x-1 shrink-0 ml-2"
+                      title="Copy target file path"
+                    >
+                      {copiedTargetFile ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-400">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Path</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* Root Cause Callout */}
@@ -1089,13 +1068,17 @@ export default function HomePage() {
                     <span>Root Cause Diagnosis:</span>
                   </div>
                   {errorMessage ? (
-                    <div className="text-xs text-rose-400 font-mono p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-start space-x-2">
+                    <div className="text-xs text-rose-300 font-mono p-3 rounded-lg bg-rose-950/20 border border-rose-500/30 flex items-start space-x-2.5">
                       <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                       <div>
-                        <div className="font-bold">Execution Error:</div>
-                        <div>{errorMessage}</div>
+                        <div className="font-semibold text-rose-300">Analysis Error Encountered</div>
+                        <div className="text-zinc-400 mt-0.5">{errorMessage}</div>
                       </div>
                     </div>
+                  ) : !rootCause ? (
+                    <p className="text-xs text-zinc-500 italic bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/80">
+                      Awaiting input analysis...
+                    </p>
                   ) : (
                     <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/80">
                       {rootCause}
@@ -1115,92 +1098,119 @@ export default function HomePage() {
                 </div>
 
                 {/* Diff Viewer Body */}
-                <div className="border border-zinc-800 rounded-lg overflow-hidden bg-[#050508] font-mono text-[12px] leading-5">
-                  {parsedDiffLines.map((line) => {
-                    if (line.type === "hunk") {
+                {errorMessage ? (
+                  <div className="flex flex-col items-center justify-center py-10 px-4 text-center min-h-[220px]">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-2.5">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div className="text-xs font-mono font-semibold text-zinc-200 mb-1">Patch Synthesis Interrupted</div>
+                    <div className="text-[11px] text-zinc-400 max-w-sm font-sans mb-3">{errorMessage}</div>
+                    <button
+                      onClick={handleAnalyze}
+                      className="px-3.5 py-1.5 text-xs font-mono rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition flex items-center space-x-1.5 active:scale-95"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Retry Analysis</span>
+                    </button>
+                  </div>
+                ) : !diffText.trim() ? (
+                  <div className="flex flex-col items-center justify-center py-10 px-4 text-center min-h-[220px]">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-2.5">
+                      <FileCode className="w-5 h-5" />
+                    </div>
+                    <div className="text-xs font-mono font-semibold text-zinc-300 mb-1">Awaiting Crash Input</div>
+                    <div className="text-[11px] text-zinc-500 max-w-xs font-sans">
+                      Paste a crash log and click <strong className="text-emerald-400 font-normal">Analyze Error</strong>, or pick a scenario preset above.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-zinc-800 rounded-lg overflow-hidden bg-[#050508] font-mono text-[12px] leading-5">
+                    {parsedDiffLines.map((line) => {
+                      if (line.type === "hunk") {
+                        return (
+                          <div
+                            key={line.id}
+                            className="bg-cyan-950/30 text-cyan-400/95 font-semibold px-3 py-1 border-y border-cyan-800/30 select-none text-[11px]"
+                          >
+                            {line.content}
+                          </div>
+                        );
+                      }
+                      if (line.type === "header") {
+                        return (
+                          <div
+                            key={line.id}
+                            className="bg-zinc-900/60 text-zinc-500 px-3 py-0.5 border-b border-zinc-800/80 select-none text-[11px]"
+                          >
+                            {line.content}
+                          </div>
+                        );
+                      }
+                      if (line.type === "add") {
+                        return (
+                          <div
+                            key={line.id}
+                            className="flex items-center bg-emerald-500/[0.08] text-emerald-300 border-l-2 border-emerald-500 hover:bg-emerald-500/[0.14] transition-colors"
+                          >
+                            <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-zinc-600 select-none pr-2 shrink-0">
+                              {line.oldNum}
+                            </span>
+                            <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-emerald-400/80 select-none pr-2 shrink-0">
+                              {line.newNum}
+                            </span>
+                            <span className="w-5 text-center font-bold text-emerald-400 select-none shrink-0">
+                              +
+                            </span>
+                            <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto">
+                              {line.content}
+                            </span>
+                          </div>
+                        );
+                      }
+                      if (line.type === "delete") {
+                        return (
+                          <div
+                            key={line.id}
+                            className="flex items-center bg-rose-500/[0.08] text-rose-300 border-l-2 border-rose-500 hover:bg-rose-500/[0.14] transition-colors"
+                          >
+                            <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-rose-400/80 select-none pr-2 shrink-0">
+                              {line.oldNum}
+                            </span>
+                            <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-zinc-600 select-none pr-2 shrink-0">
+                              {line.newNum}
+                            </span>
+                            <span className="w-5 text-center font-bold text-rose-400 select-none shrink-0">
+                              -
+                            </span>
+                            <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto">
+                              {line.content}
+                            </span>
+                          </div>
+                        );
+                      }
+                      // Context line
                       return (
                         <div
                           key={line.id}
-                          className="bg-cyan-950/30 text-cyan-400/95 font-semibold px-3 py-1 border-y border-cyan-800/30 select-none text-[11px]"
+                          className="flex items-center text-zinc-300 hover:bg-white/[0.02] transition-colors border-l-2 border-transparent"
                         >
-                          {line.content}
-                        </div>
-                      );
-                    }
-                    if (line.type === "header") {
-                      return (
-                        <div
-                          key={line.id}
-                          className="bg-zinc-900/60 text-zinc-500 px-3 py-0.5 border-b border-zinc-800/80 select-none text-[11px]"
-                        >
-                          {line.content}
-                        </div>
-                      );
-                    }
-                    if (line.type === "add") {
-                      return (
-                        <div
-                          key={line.id}
-                          className="flex items-center bg-emerald-500/[0.08] text-emerald-300 border-l-2 border-emerald-500 hover:bg-emerald-500/[0.14] transition-colors"
-                        >
-                          <span className="w-8 text-right font-mono text-[10px] text-zinc-600 select-none pr-2 shrink-0">
+                          <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-zinc-600 select-none pr-2 shrink-0">
                             {line.oldNum}
                           </span>
-                          <span className="w-8 text-right font-mono text-[10px] text-emerald-400/80 select-none pr-2 shrink-0">
+                          <span className="w-10 sm:w-11 text-right font-mono tabular-nums text-[10px] text-zinc-600 select-none pr-2 shrink-0">
                             {line.newNum}
                           </span>
-                          <span className="w-5 text-center font-bold text-emerald-400 select-none shrink-0">
-                            +
+                          <span className="w-5 text-center text-zinc-600 select-none shrink-0">
+                            {" "}
                           </span>
-                          <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto">
+                          <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto text-zinc-400">
                             {line.content}
                           </span>
                         </div>
                       );
-                    }
-                    if (line.type === "delete") {
-                      return (
-                        <div
-                          key={line.id}
-                          className="flex items-center bg-rose-500/[0.08] text-rose-300 border-l-2 border-rose-500 hover:bg-rose-500/[0.14] transition-colors"
-                        >
-                          <span className="w-8 text-right font-mono text-[10px] text-rose-400/80 select-none pr-2 shrink-0">
-                            {line.oldNum}
-                          </span>
-                          <span className="w-8 text-right font-mono text-[10px] text-zinc-600 select-none pr-2 shrink-0">
-                            {line.newNum}
-                          </span>
-                          <span className="w-5 text-center font-bold text-rose-400 select-none shrink-0">
-                            -
-                          </span>
-                          <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto">
-                            {line.content}
-                          </span>
-                        </div>
-                      );
-                    }
-                    // Context line
-                    return (
-                      <div
-                        key={line.id}
-                        className="flex items-center text-zinc-300 hover:bg-white/[0.02] transition-colors border-l-2 border-transparent"
-                      >
-                        <span className="w-8 text-right font-mono text-[10px] text-zinc-600 select-none pr-2 shrink-0">
-                          {line.oldNum}
-                        </span>
-                        <span className="w-8 text-right font-mono text-[10px] text-zinc-600 select-none pr-2 shrink-0">
-                          {line.newNum}
-                        </span>
-                        <span className="w-5 text-center text-zinc-600 select-none shrink-0">
-                          {" "}
-                        </span>
-                        <span className="font-mono text-[12px] whitespace-pre select-text flex-1 py-0.5 pr-3 overflow-x-auto text-zinc-400">
-                          {line.content}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Step-by-Step Verification & Apply Guide Accordion */}
@@ -1226,11 +1236,23 @@ export default function HomePage() {
                         Save patch to file: <code className="text-emerald-300 bg-zinc-800 px-1 py-0.5 rounded">runfix.patch</code>
                       </div>
                     </div>
-                    <div className="flex items-start space-x-2">
-                      <span className="text-cyan-400 font-bold shrink-0">2.</span>
-                      <div>
-                        Apply to local git repository: <code className="text-cyan-300 bg-zinc-800 px-1 py-0.5 rounded">git apply runfix.patch</code>
+                    <div className="flex items-start justify-between space-x-2 bg-zinc-950/40 p-2 rounded border border-zinc-800">
+                      <div className="flex items-start space-x-2">
+                        <span className="text-cyan-400 font-bold shrink-0">2.</span>
+                        <div>
+                          Apply to local git repository: <code className="text-cyan-300 bg-zinc-800 px-1 py-0.5 rounded">git apply runfix.patch</code>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText("git apply runfix.patch");
+                          showToast("Copied `git apply runfix.patch`!");
+                        }}
+                        className="text-[10px] text-zinc-400 hover:text-white px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/60 transition shrink-0"
+                        title="Copy command to clipboard"
+                      >
+                        Copy Command
+                      </button>
                     </div>
                     <div className="flex items-start space-x-2">
                       <span className="text-purple-400 font-bold shrink-0">3.</span>
@@ -1245,20 +1267,44 @@ export default function HomePage() {
               {/* Bottom Action Footer */}
               <div className="px-4 py-3 bg-zinc-900/80 border-t border-zinc-800 flex items-center justify-between">
                 <div className="text-[11px] font-mono text-zinc-500 flex items-center space-x-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Syntactically Verified Patch</span>
+                  {errorMessage ? (
+                    <>
+                      <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                      <span className="text-rose-400">Analysis Halted</span>
+                    </>
+                  ) : diffText.trim() ? (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Syntactically Verified Patch</span>
+                    </>
+                  ) : (
+                    <>
+                      <Info className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>Awaiting Analysis</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={handleDownloadDiff}
-                    className="px-3 py-1.5 text-xs font-mono rounded-lg bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border border-zinc-700 transition flex items-center space-x-1.5 active:scale-95"
+                    disabled={!diffText.trim() || !!errorMessage}
+                    className={`px-3 py-1.5 text-xs font-mono rounded-lg border transition flex items-center space-x-1.5 active:scale-95 ${
+                      !diffText.trim() || !!errorMessage
+                        ? "bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-cyan-400 border-zinc-700"
+                    }`}
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download</span>
                   </button>
                   <button
                     onClick={handleCopyDiff}
-                    className="px-3.5 py-1.5 text-xs font-mono font-semibold rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition flex items-center space-x-1.5 active:scale-95 shadow-sm shadow-emerald-500/10"
+                    disabled={!diffText.trim() || !!errorMessage}
+                    className={`px-3.5 py-1.5 text-xs font-mono font-semibold rounded-lg border transition flex items-center space-x-1.5 active:scale-95 shadow-sm ${
+                      !diffText.trim() || !!errorMessage
+                        ? "bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed"
+                        : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10"
+                    }`}
                   >
                     <Copy className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Copy Patch</span>
