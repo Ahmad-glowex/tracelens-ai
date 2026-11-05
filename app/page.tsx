@@ -38,6 +38,8 @@ import {
   RefreshCw,
   Clock,
   Download,
+  ChevronDown,
+  HelpCircle,
 } from "lucide-react";
 
 // Preset Real-World Error Samples
@@ -172,6 +174,86 @@ Warning: Expected server HTML to contain a matching <div> in <span>.
 +  return <span>Current Time: {mounted ? new Date().toLocaleTimeString() : "--:--:--"}</span>;
 +}`,
   },
+};
+
+const FAQ_ITEMS = [
+  {
+    question: "What is RunFix AI (tracelens-ai)?",
+    answer:
+      "RunFix AI is an intelligent developer triage workbench that parses cryptic terminal stack traces, type panics, and container exit codes, isolates the root-cause user code line, and synthesizes clean, git-apply compatible unified diff patches in sub-seconds.",
+  },
+  {
+    question: "How does RunFix AI diagnose errors and generate Git diffs?",
+    answer:
+      "RunFix AI analyzes stack traces across framework layers, pinpoints the root cause, and utilizes frontier reasoning models like Anthropic Claude alongside high-throughput inference clusters to generate syntactically valid unified diffs.",
+  },
+  {
+    question: "What programming languages and frameworks are supported?",
+    answer:
+      "RunFix AI supports Node.js, TypeScript, Next.js hydration errors, Python FastAPI and Pydantic validation errors, Go runtime panics, Rust bounds panics, and Docker OOM Exit Code 137.",
+  },
+  {
+    question: "Is my code private and secure when using RunFix AI?",
+    answer:
+      "Yes. RunFix AI operates on a strict zero code telemetry policy. User logs and patches are never saved, stored, or used for model training. API keys entered in BYOK mode remain exclusively in local browser storage.",
+  },
+  {
+    question: "How do I apply the generated patch to my codebase?",
+    answer:
+      "Copy the generated unified diff patch or save it to a file (e.g., runfix.patch), then execute 'git apply runfix.patch' in your project root terminal.",
+  },
+];
+
+const softwareAppJsonLd = {
+  "@type": "SoftwareApplication",
+  "@id": "https://runfix.live/#software",
+  name: "RunFix AI",
+  alternateName: "tracelens-ai",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Cross-platform (Linux, macOS, Windows)",
+  url: "https://runfix.live",
+  image: "https://runfix.live/og-image.png",
+  softwareVersion: "1.0.0",
+  description:
+    "Automated developer error triage engine turning terminal crashes into verified Git diff patches.",
+  featureList: [
+    "Deterministic AST root-cause frame pinpointing",
+    "Syntax-aware unified Git diff generation (git apply compatible)",
+    "Zero-telemetry client-side BYOK privacy architecture",
+    "Multi-engine cascading failover across Claude, Gemini, Groq, and River AI",
+    "Broad runtime support: Node.js, Next.js, Python FastAPI, Go, Rust, and Docker",
+  ],
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+  },
+  publisher: {
+    "@id": "https://runfix.live/#organization",
+  },
+};
+
+const pageJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    softwareAppJsonLd,
+    {
+      "@type": "FAQPage",
+      "@id": "https://runfix.live/#faq",
+      isPartOf: {
+        "@id": "https://runfix.live/#website",
+      },
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer,
+        },
+      })),
+    },
+  ],
 };
 
 interface ModelOption {
@@ -397,6 +479,10 @@ export default function HomePage() {
 
   return (
     <div className="relative min-h-screen text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }}
+      />
       {/* Navigation */}
       <nav className="sticky top-0 z-40 border-b border-white/5 bg-[#08080b]/90 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -427,6 +513,9 @@ export default function HomePage() {
             <a href="#beta" className="hover:text-white transition-colors flex items-center space-x-1.5 text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Beta Access</span>
+            </a>
+            <a href="#faq" className="hover:text-white transition-colors">
+              FAQ
             </a>
             <a
               href="https://github.com/Ahmad-glowex/tracelens-ai"
@@ -480,6 +569,13 @@ export default function HomePage() {
               className="block text-emerald-400 hover:text-emerald-300 py-1"
             >
               🎁 Beta Access
+            </a>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-zinc-300 hover:text-white py-1"
+            >
+              ❓ FAQ
             </a>
             <a
               href="https://github.com/Ahmad-glowex/tracelens-ai"
@@ -1049,6 +1145,42 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto border-t border-white/5">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-4">
+            <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <span>KNOWLEDGE BASE & FAQ</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-zinc-400 text-sm sm:text-base mt-3">
+            Everything you need to know about RunFix AI triage, privacy governance, and git patches.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {FAQ_ITEMS.map((item, idx) => (
+            <details
+              key={idx}
+              open={idx === 0}
+              className="group glass-card rounded-xl border border-white/10 overflow-hidden transition-all duration-200"
+            >
+              <summary className="w-full py-4 px-6 text-left flex items-center justify-between gap-4 cursor-pointer list-none hover:bg-white/[0.02] transition select-none">
+                <span className="font-semibold text-white text-base sm:text-lg">
+                  {item.question}
+                </span>
+                <ChevronDown className="w-5 h-5 text-emerald-400 shrink-0 transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="px-6 pb-5 pt-2 text-sm sm:text-base text-zinc-300 leading-relaxed border-t border-white/5 font-sans">
+                {item.answer}
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* Footer (MANDATORY EXACT VERBATIM NOTICE) */}
       <footer className="relative z-10 border-t border-white/5 bg-[#07070a] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
@@ -1073,6 +1205,10 @@ export default function HomePage() {
               <span>Contact: founder@runfix.live</span>
             </a>
             <span className="text-zinc-600">•</span>
+            <a href="#faq" className="hover:text-white transition">
+              FAQ
+            </a>
+            <span className="text-zinc-600">•</span>
             <Link href="/terms" className="hover:text-white transition">
               Terms of Service
             </Link>
@@ -1080,6 +1216,10 @@ export default function HomePage() {
             <Link href="/privacy" className="hover:text-white transition">
               Privacy Policy
             </Link>
+            <span className="text-zinc-600">•</span>
+            <a href="/llms.txt" className="hover:text-white transition">
+              llms.txt
+            </a>
             <span className="text-zinc-600">•</span>
             <a
               href="https://github.com/Ahmad-glowex/tracelens-ai"

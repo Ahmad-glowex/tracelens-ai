@@ -1,0 +1,73 @@
+# RunFix AI (tracelens-ai)
+
+> Automated runtime crash diagnosis, root-cause pinpointing, and syntax-aware unified Git patch synthesis in sub-seconds.
+
+RunFix AI (accessible at https://runfix.live and hosted at https://github.com/Ahmad-glowex/tracelens-ai) is a developer triage platform and intelligent developer workbench built on Next.js 14 App Router, TypeScript, and Tailwind CSS. It parses cryptic terminal stack traces, unhandled promise rejections, type panics, and container exit codes, isolates offending frames down to the exact root-cause user code line, and produces verified `git apply` compatible unified diffs.
+
+## Primary Resources
+
+- [Workbench & Sandbox](https://runfix.live): Interactive browser-based developer triage workbench with real-world presets.
+- [GitHub Repository](https://github.com/Ahmad-glowex/tracelens-ai): Source code, issue tracker, license, and community triage.
+- [API Route](https://runfix.live/api/analyze): High-throughput serverless API route handler for crash analysis.
+- [Terms of Service](https://runfix.live/terms): Terms of service and legal agreement operated by Raihan LLC.
+- [Privacy Policy](https://runfix.live/privacy): Zero telemetry architecture, BYOK local storage, and code privacy guarantees.
+- [Full LLM Context](https://runfix.live/llms-full.txt): Complete system documentation and developer guides for AI crawlers.
+
+## Key Capabilities
+
+1. Deterministic Root-Cause Pinpointing: Slices noisy framework stacks down to the exact root-cause user code line across Node.js, Next.js, Python, Go, Rust, and Docker.
+2. Verified Git Patch Synthesis: Emits syntactically valid RFC 5322 unified diff patches ready for direct terminal execution (`git apply patch.diff`).
+3. Multi-Engine Cascading Failover: Serverless dispatch with automatic failover between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
+4. Zero Code Telemetry: User error traces and generated patches are never logged, stored, or used for model training. API keys remain in client-side localStorage.
+
+## Supported Runtimes & Crash Scenarios
+
+- Node.js & TypeScript: Unhandled promise rejections, TypeError null/undefined property lookups, async race conditions.
+- Next.js (App Router / Pages Router): Hydration mismatch errors between server-rendered HTML and client hydration.
+- Python FastAPI / Pydantic: 422 Unprocessable Entity schema validation crashes, RFC 5322 email syntax errors.
+- Go (Golang): Fatal runtime panics including concurrent map read/write and nil pointer dereferences.
+- Rust: Tokio runtime panics, slice and vector index out-of-bounds panics.
+- Docker & Linux Containers: Linux OOM Killer Exit Code 137, v8 JavaScript heap limit exhaustion.
+
+## API Specification
+
+- Method: `POST`
+- Path: `/api/analyze`
+- Request Headers: `Content-Type: application/json`
+- Request Body JSON Schema:
+  - `errorLog` (string, required): Raw terminal error message or stack trace.
+  - `provider` (string, optional): One of `anthropic`, `river`, `groq`, `gemini`, `openai`, `custom`.
+  - `model` (string, optional): Target model identifier.
+  - `apiKey` (string, optional): User BYOK API key for private execution.
+  - `customUrl` (string, optional): Custom OpenAI-compatible endpoint URL.
+- Response Body JSON Schema:
+  - `success` (boolean): Analysis outcome status.
+  - `data.rootCause` (string): Direct 1-2 sentence technical analysis.
+  - `data.targetFile` (string): Primary affected file path.
+  - `data.diff` (string): Clean unified Git diff patch starting with `@@`.
+  - `data.latency` (number): Execution latency in milliseconds.
+  - `data.provider` (string): Active provider used.
+  - `data.model` (string): Active model name used.
+
+## Patch Application Instructions
+
+```bash
+# Step 1: Save the generated diff to a patch file
+cat << 'EOF' > runfix.patch
+<insert unified diff here>
+EOF
+
+# Step 2: Apply the patch to your repository
+git apply runfix.patch
+
+# Step 3: Run your test suite to verify resolution
+npm test # or pytest, go test, cargo test
+```
+
+## Operator & Corporate Information
+
+- Entity Name: Raihan LLC
+- Registered Address: 1910 Thomes Ave, Cheyenne, WY 82001, United States
+- Official Contact: founder@runfix.live
+- Official Website: https://runfix.live
+- Repository: https://github.com/Ahmad-glowex/tracelens-ai

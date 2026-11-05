@@ -1,9 +1,88 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Zap, ArrowLeft } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy & Zero Telemetry",
+  description:
+    "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC. Understand our client-side BYOK security model and data handling.",
+  alternates: {
+    canonical: "https://runfix.live/privacy",
+  },
+  openGraph: {
+    title: "Privacy Policy & Zero Telemetry | RunFix AI",
+    description:
+      "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+    url: "https://runfix.live/privacy",
+    siteName: "RunFix AI",
+    images: [
+      {
+        url: "https://runfix.live/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "RunFix AI — Privacy Policy",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy & Zero Telemetry | RunFix AI",
+    description:
+      "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+    creator: "@runfix_ai",
+    site: "@runfix_ai",
+    images: ["https://runfix.live/twitter-image.png"],
+  },
+};
+
+const privacyJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://runfix.live/privacy/#webpage",
+      url: "https://runfix.live/privacy",
+      name: "Privacy Policy & Zero Telemetry | RunFix AI",
+      description:
+        "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+      isPartOf: {
+        "@id": "https://runfix.live/#website",
+      },
+      breadcrumb: {
+        "@id": "https://runfix.live/privacy/#breadcrumb",
+      },
+      inLanguage: "en-US",
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://runfix.live/privacy/#breadcrumb",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://runfix.live",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Privacy Policy",
+          item: "https://runfix.live/privacy",
+        },
+      ],
+    },
+  ],
+};
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen text-zinc-100 font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(privacyJsonLd) }}
+      />
       <nav className="border-b border-dark-border/80 bg-dark-bg/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2.5">
@@ -24,6 +103,19 @@ export default function PrivacyPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
         <div className="glass-card rounded-2xl p-8 sm:p-12">
+          <nav aria-label="Breadcrumb" className="mb-4 text-xs font-mono text-zinc-500">
+            <ol className="flex items-center space-x-2 list-none p-0 m-0">
+              <li>
+                <Link href="/" className="hover:text-white transition">
+                  Home
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page" className="text-zinc-300">
+                Privacy Policy
+              </li>
+            </ol>
+          </nav>
           <div className="text-xs font-mono text-brand-400 uppercase tracking-widest mb-2">
             Privacy & Governance
           </div>

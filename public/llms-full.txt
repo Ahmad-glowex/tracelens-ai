@@ -1,0 +1,81 @@
+# RunFix AI (tracelens-ai) — Full Technical Documentation & Architecture Reference
+
+> Automated runtime crash diagnosis, root-cause pinpointing, and syntax-aware unified Git patch synthesis in sub-seconds.
+
+Official Website: https://runfix.live  
+GitHub Repository: https://github.com/Ahmad-glowex/tracelens-ai  
+Operator: Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States)  
+Contact: founder@runfix.live
+
+---
+
+## 1. System Overview
+
+RunFix AI is a developer triage platform designed to eliminate engineering hours lost to parsing cryptic terminal traces, unhandled exceptions, type errors, and container crashes. It combines deterministic AST log parsing with frontier reasoning LLMs and sub-second inference clusters to produce verifiable unified Git diffs (`git apply`).
+
+### Architectural Highlights
+- **Zero CORS Overhead:** Unified serverless route handler (`app/api/analyze/route.ts`) handles API proxying securely.
+- **Cascading Failover:** Resilient multi-engine failover between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
+- **Client-Side Privacy:** Strict zero code telemetry. No logging or persistent caching of user code or crash dumps. BYOK API keys remain in browser `localStorage`.
+- **Silicon Valley Dark UI:** Built with Raycast/Linear design aesthetic using Next.js 14 App Router, TypeScript, and Tailwind CSS.
+
+---
+
+## 2. API Reference
+
+### `POST /api/analyze`
+
+Analyzes an error traceback or crash log and returns root cause diagnostics and an RFC 5322 unified Git diff patch.
+
+#### Request Headers
+```http
+POST /api/analyze HTTP/1.1
+Host: runfix.live
+Content-Type: application/json
+```
+
+#### Request Payload
+```json
+{
+  "errorLog": "TypeError: Cannot read properties of undefined (reading 'map')\n    at UserProfileList (src/components/UserProfileList.tsx:42:28)",
+  "provider": "anthropic",
+  "model": "claude-frontier",
+  "apiKey": "sk-ant-...",
+  "customUrl": "https://api.river.ai/v1"
+}
+```
+
+#### Response Payload
+```json
+{
+  "success": true,
+  "data": {
+    "rootCause": "The 'users' collection is asynchronously populated. On initial mount before resolution, 'users' evaluates to undefined. Invoking map causes an unhandled TypeError.",
+    "targetFile": "src/components/UserProfileList.tsx",
+    "diff": "@@ -40,3 +40,3 @@\n-  return users.map(u => <UserCard key={u.id} user={u} />);\n+  return (users ?? []).map(u => <UserCard key={u.id} user={u} />);\n",
+    "latency": 342,
+    "provider": "ANTHROPIC",
+    "model": "claude-frontier"
+  }
+}
+```
+
+---
+
+## 3. Presets & Common Error Triage
+
+1. **Node.js / TypeScript**: TypeError cannot read properties of undefined (`src/components/UserProfileList.tsx`).
+2. **Python FastAPI / Pydantic**: 422 Unprocessable Entity RFC 5322 email syntax validation (`app/api/v1/endpoints/users.py`).
+3. **Go Panic**: Fatal error concurrent map read and map write (`internal/cache/memory_store.go`).
+4. **Rust Tokio Panic**: Tokio worker bounds check panic index out of bounds (`src/worker/pool.rs`).
+5. **Docker OOM**: Exit Code 137 Linux OOM killer exceeding v8 heap limit (`docker-compose.yml`).
+6. **Next.js Hydration**: Hydration mismatch between server-rendered HTML and client hydration (`app/dashboard/page.tsx`).
+
+---
+
+## 4. Legal, Privacy, and Licensing
+
+- **License:** MIT License (https://opensource.org/licenses/MIT)
+- **Operated by:** Raihan LLC, a Wyoming legal entity, 1910 Thomes Ave, Cheyenne, WY 82001, United States.
+- **Terms of Service:** https://runfix.live/terms
+- **Privacy Policy:** https://runfix.live/privacy
