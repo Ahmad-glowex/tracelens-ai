@@ -175,7 +175,7 @@ export function PricingClient() {
               onClick={() => openStripeModal("Pro BYOK")}
               className="w-full py-2.5 px-4 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-mono text-xs font-bold text-center block transition-all shadow-md shadow-cyan-500/20"
             >
-              Subscribe with Stripe ($15/mo)
+              Subscribe with Stripe ({annual ? "$15/mo" : "$19/mo"})
             </button>
           </div>
         </div>

@@ -39,11 +39,21 @@
   "bugs": {
     "url": "https://github.com/Ahmad-glowex/tracelens-ai/issues"
   },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "require": "./lib/index.js"
+    }
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test test/**/*.test.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

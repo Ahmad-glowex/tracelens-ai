@@ -67,6 +67,11 @@ const pricingJsonLd = {
       "@type": "Product",
       name: "RunFix AI",
       description: "Autonomous runtime crash triage, CLI & MCP server, and unified Git patch synthesis.",
+      image: "https://runfix.live/og-image.png",
+      brand: {
+        "@type": "Brand",
+        name: "RunFix AI",
+      },
       offers: [
         {
           "@type": "Offer",

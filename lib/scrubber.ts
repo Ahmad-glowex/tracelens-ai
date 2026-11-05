@@ -26,17 +26,17 @@ const SCRUB_RULES: PatternRule[] = [
     pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g,
     replacement: "[REDACTED_PRIVATE_KEY]",
   },
-  // OpenAI API Keys
-  {
-    type: "OpenAI API Key",
-    pattern: /sk-(?:live|test|proj)?[a-zA-Z0-9_-]{24,}/g,
-    replacement: "[REDACTED_OPENAI_KEY]",
-  },
-  // Anthropic API Keys
+  // Anthropic API Keys (must precede OpenAI to prevent false sk- prefix match)
   {
     type: "Anthropic API Key",
     pattern: /sk-ant-[a-zA-Z0-9_-]{30,}/g,
     replacement: "[REDACTED_ANTHROPIC_KEY]",
+  },
+  // OpenAI API Keys
+  {
+    type: "OpenAI API Key",
+    pattern: /sk-(?!ant-)(?:live|test|proj)?[a-zA-Z0-9_-]{20,}/g,
+    replacement: "[REDACTED_OPENAI_KEY]",
   },
   // Google / Gemini API Keys
   {
