@@ -1,33 +1,63 @@
-# RunFix AI (tracelens-ai)
+# RunFix AI (runfix.live)
 
-> Automated runtime crash diagnosis, root-cause pinpointing, and syntax-aware unified Git patch synthesis in sub-seconds.
+> Automated runtime crash diagnosis, root-cause pinpointing, client-side secret scrubbing, CLI & MCP server, and syntax-aware unified Git patch synthesis in sub-seconds.
 
-RunFix AI (accessible at https://runfix.live and hosted at https://github.com/Ahmad-glowex/tracelens-ai) is a developer triage platform and intelligent developer workbench built on Next.js 14 App Router, TypeScript, and Tailwind CSS. It parses cryptic terminal stack traces, unhandled promise rejections, type panics, and container exit codes, isolates offending frames down to the exact root-cause user code line, and produces verified `git apply` compatible unified diffs.
+RunFix AI (accessible at https://runfix.live and open-source on GitHub at https://github.com/Ahmad-glowex/tracelens-ai) is a developer triage platform, terminal CLI, and Model Context Protocol (MCP) server built with Next.js 14 App Router, TypeScript, and Tailwind CSS. It parses cryptic terminal stack traces, unhandled promise rejections, type panics, and container exit codes, sanitizes secrets client-side, isolates offending frames down to the exact root-cause user code line, and produces verified `git apply` compatible unified diffs.
 
 ## Primary Resources
 
-- [Workbench & Sandbox](https://runfix.live): Interactive browser-based developer triage workbench with real-world presets.
-- [GitHub Repository](https://github.com/Ahmad-glowex/tracelens-ai): Source code, issue tracker, license, and community triage.
+- [Interactive Workbench](https://runfix.live): Browser-based developer triage workbench with real-world error presets and sub-second execution.
+- [Developer Documentation](https://runfix.live/docs): Comprehensive setup guides for CLI, Model Context Protocol (MCP), CI Action healer, and REST API.
+- [Pricing & Plans](https://runfix.live/pricing): Transparent tiers for Developer Free, Pro BYOK ($19/mo or $0 BYOK), and Enterprise Healer ($99/seat/mo).
+- [Enterprise Security & Compliance](https://runfix.live/security): Architecture documentation for zero code telemetry, client-side secret scrubbing, and zero data retention.
+- [About Us & Vision](https://runfix.live/about): Founder vision, company background, and technical roadmap.
+- [GitHub Repository](https://github.com/Ahmad-glowex/tracelens-ai): Source code, CLI script, MCP server, issue tracker, and CI templates.
 - [API Route](https://runfix.live/api/analyze): High-throughput serverless API route handler for crash analysis.
-- [Terms of Service](https://runfix.live/terms): Terms of service and legal agreement operated by Raihan LLC.
+- [Terms of Service](https://runfix.live/terms): Legal terms operated by Raihan LLC.
 - [Privacy Policy](https://runfix.live/privacy): Zero telemetry architecture, BYOK local storage, and code privacy guarantees.
-- [Full LLM Context](https://runfix.live/llms-full.txt): Complete system documentation and developer guides for AI crawlers.
+- [Full LLM Context](https://runfix.live/llms-full.txt): Complete technical documentation and architecture reference for AI agents.
 
-## Key Capabilities
+## Core Capabilities
 
 1. Deterministic Root-Cause Pinpointing: Slices noisy framework stacks down to the exact root-cause user code line across Node.js, Next.js, Python, Go, Rust, and Docker.
 2. Verified Git Patch Synthesis: Emits syntactically valid RFC 5322 unified diff patches ready for direct terminal execution (`git apply patch.diff`).
-3. Multi-Engine Cascading Failover: Serverless dispatch with automatic failover between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
-4. Zero Code Telemetry: User error traces and generated patches are never logged, stored, or used for model training. API keys remain in client-side localStorage.
+3. Client-Side Secret & PII Scrubber: Client-side regex engine sanitizes API keys (OpenAI, Anthropic, Google, AWS, GitHub), JWT tokens, database connection passwords, and emails before network transmission.
+4. Official CLI Tool: Available via `npx runfix` to monitor commands (`npx runfix "npm test"`), triage piped traces (`cat crash.log | npx runfix`), or run standalone.
+5. Model Context Protocol (MCP) Server: Run `npx runfix mcp` to connect RunFix triage tools to Cursor, Windsurf, Claude Desktop, and VS Code.
+6. Autonomous GitHub Action Healer: CI/CD workflow template (`templates/runfix-action.yml`) that intercepts failed CI runs and automatically opens a pull request with the synthesized patch.
+7. Multi-Engine Cascading Failover: Serverless dispatch with automatic failover between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
+8. Zero Code Telemetry: User error traces and generated patches are never logged, stored on disk, or used for model training. BYOK API keys remain in client-side localStorage.
 
-## Supported Runtimes & Crash Scenarios
+## CLI & MCP Usage
 
-- Node.js & TypeScript: Unhandled promise rejections, TypeError null/undefined property lookups, async race conditions.
-- Next.js (App Router / Pages Router): Hydration mismatch errors between server-rendered HTML and client hydration.
-- Python FastAPI / Pydantic: 422 Unprocessable Entity schema validation crashes, RFC 5322 email syntax errors.
-- Go (Golang): Fatal runtime panics including concurrent map read/write and nil pointer dereferences.
-- Rust: Tokio runtime panics, slice and vector index out-of-bounds panics.
-- Docker & Linux Containers: Linux OOM Killer Exit Code 137, v8 JavaScript heap limit exhaustion.
+```bash
+# Run command and auto-triage failures
+npx runfix "npm test"
+npx runfix "pytest tests/"
+npx runfix "cargo build"
+
+# Analyze piped error log or stack trace
+cat failure.log | npx runfix
+
+# Launch Model Context Protocol (MCP) server for IDEs
+npx runfix mcp
+```
+
+### MCP IDE Configuration (`claude_desktop_config.json` or `.cursor/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "runfix": {
+      "command": "npx",
+      "args": ["-y", "runfix", "mcp"],
+      "env": {
+        "RUNFIX_API_URL": "https://runfix.live/api/analyze"
+      }
+    }
+  }
+}
+```
 
 ## API Specification
 
@@ -64,10 +94,11 @@ git apply runfix.patch
 npm test # or pytest, go test, cargo test
 ```
 
-## Operator & Corporate Information
+## Corporate & Operator Information
 
 - Entity Name: Raihan LLC
 - Registered Address: 1910 Thomes Ave, Cheyenne, WY 82001, United States
 - Official Contact: founder@runfix.live
+- Security Inquiries: security@runfix.live
 - Official Website: https://runfix.live
 - Repository: https://github.com/Ahmad-glowex/tracelens-ai

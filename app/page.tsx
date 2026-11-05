@@ -510,20 +510,16 @@ export default function HomePage() {
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
+          <div className="hidden md:flex items-center space-x-7 text-sm font-medium text-zinc-400">
             <a href="#playground" className="hover:text-white transition-colors">
               Workbench
             </a>
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <a href="#beta" className="hover:text-white transition-colors flex items-center space-x-1.5 text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Beta Access</span>
-            </a>
-            <a href="#faq" className="hover:text-white transition-colors">
-              FAQ
-            </a>
+            <Link href="/docs" className="hover:text-white transition-colors">
+              Docs
+            </Link>
+            <Link href="/pricing" className="hover:text-white transition-colors">
+              Pricing
+            </Link>
             <Link href="/security" className="hover:text-white transition-colors">
               Security
             </Link>
@@ -569,27 +565,20 @@ export default function HomePage() {
             >
               ⚡ Workbench
             </a>
-            <a
-              href="#features"
+            <Link
+              href="/docs"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-zinc-300 hover:text-white py-1"
             >
-              🛠️ Features
-            </a>
-            <a
-              href="#beta"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-emerald-400 hover:text-emerald-300 py-1"
-            >
-              🎁 Beta Access
-            </a>
-            <a
-              href="#faq"
+              📚 Developer Docs
+            </Link>
+            <Link
+              href="/pricing"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-zinc-300 hover:text-white py-1"
             >
-              ❓ FAQ
-            </a>
+              💳 Pricing & Plans
+            </Link>
             <Link
               href="/security"
               onClick={() => setMobileMenuOpen(false)}
@@ -1281,6 +1270,14 @@ export default function HomePage() {
             <a href="#faq" className="hover:text-white transition">
               FAQ
             </a>
+            <span className="text-zinc-600">•</span>
+            <Link href="/docs" className="hover:text-white transition">
+              Docs
+            </Link>
+            <span className="text-zinc-600">•</span>
+            <Link href="/pricing" className="hover:text-white transition">
+              Pricing
+            </Link>
             <span className="text-zinc-600">•</span>
             <Link href="/security" className="hover:text-white transition">
               Security

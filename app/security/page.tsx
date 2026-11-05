@@ -202,8 +202,10 @@ export default function SecurityPage() {
       <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div>© {new Date().getFullYear()} RunFix AI (Raihan LLC). All rights reserved.</div>
-          <div className="flex items-center space-x-6">
+          <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">Workbench</Link>
+            <Link href="/docs" className="hover:text-zinc-300 transition-colors">Docs</Link>
+            <Link href="/pricing" className="hover:text-zinc-300 transition-colors">Pricing</Link>
             <Link href="/about" className="hover:text-zinc-300 transition-colors">About</Link>
             <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>

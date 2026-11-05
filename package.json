@@ -1,10 +1,43 @@
 {
-  "name": "tracelens-ai",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Turn raw stack traces into instant fixes and Git diffs in milliseconds. Full-stack Next.js developer tool.",
+  "name": "runfix",
+  "version": "1.1.0",
+  "description": "Autonomous runtime crash triage & unified Git patch synthesis. Turn terminal errors into working diffs in milliseconds.",
   "bin": {
-    "runfix": "./bin/runfix.mjs"
+    "runfix": "bin/runfix.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "runfix",
+    "debugger",
+    "stack-trace",
+    "git-diff",
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "ci-cd",
+    "devops",
+    "error-monitoring",
+    "triage",
+    "claude",
+    "cursor"
+  ],
+  "author": "RunFix AI <founder@runfix.live>",
+  "license": "MIT",
+  "homepage": "https://runfix.live",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahmad-glowex/tracelens-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ahmad-glowex/tracelens-ai/issues"
   },
   "scripts": {
     "dev": "next dev",

@@ -27,15 +27,19 @@ const colors = {
   gray: "\x1b[90m",
 };
 
-// Simple secret scrubber for CLI
+// Enterprise-grade secret and PII scrubber for CLI
 function scrubText(text) {
+  if (!text) return "";
   return text
+    .replace(/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g, "[REDACTED_PRIVATE_KEY]")
     .replace(/sk-(?:live|test|proj)?[a-zA-Z0-9_-]{24,}/g, "[REDACTED_OPENAI_KEY]")
     .replace(/sk-ant-[a-zA-Z0-9_-]{30,}/g, "[REDACTED_ANTHROPIC_KEY]")
     .replace(/AIza[0-9A-Za-z\-_]{35}/g, "[REDACTED_GOOGLE_KEY]")
-    .replace(/(?:ghp|gho)_[a-zA-Z0-9]{36,}/g, "[REDACTED_GITHUB_TOKEN]")
-    .replace(/(?:postgres|mysql|mongodb(?:\+srv)?):\/\/[^:\s\/]+:([^@\s\/]+)@[^:\s\/]+/gi, (m, p) => m.replace(p, "[REDACTED_DB_PWD]"))
-    .replace(/Bearer\s+ey[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*/g, "Bearer [REDACTED_JWT]");
+    .replace(/(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,}|github_pat_[a-zA-Z0-9_]{82}/g, "[REDACTED_GITHUB_TOKEN]")
+    .replace(/(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}/g, "[REDACTED_AWS_KEY_ID]")
+    .replace(/(?:postgres|postgresql|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^:\s\/]+:([^@\s\/]+)@[^:\s\/]+/gi, (m, p) => m.replace(p, "[REDACTED_DB_PWD]"))
+    .replace(/Bearer\s+ey[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*/g, "Bearer [REDACTED_JWT]")
+    .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, "[REDACTED_EMAIL]");
 }
 
 async function queryRunFixApi(errorLog, options = {}) {

@@ -179,12 +179,24 @@ export default function PrivacyPage() {
             &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave,
             Cheyenne, WY 82001, United States).
           </p>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/" className="text-zinc-400 hover:text-white">
+              Workbench
+            </Link>
+            <Link href="/docs" className="text-zinc-400 hover:text-white">
+              Docs
+            </Link>
+            <Link href="/pricing" className="text-zinc-400 hover:text-white">
+              Pricing
+            </Link>
+            <Link href="/security" className="text-zinc-400 hover:text-white">
+              Security
+            </Link>
             <Link href="/terms" className="text-zinc-400 hover:text-white">
-              Terms of Service
+              Terms
             </Link>
             <Link href="/privacy" className="text-zinc-300 hover:text-white">
-              Privacy Policy
+              Privacy
             </Link>
           </div>
         </div>

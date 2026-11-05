@@ -1,81 +1,231 @@
-# RunFix AI (tracelens-ai) — Full Technical Documentation & Architecture Reference
+# RunFix AI (runfix.live) — Full Technical Documentation & Architecture Reference
 
-> Automated runtime crash diagnosis, root-cause pinpointing, and syntax-aware unified Git patch synthesis in sub-seconds.
+> Automated runtime crash diagnosis, root-cause pinpointing, client-side secret scrubbing, CLI & MCP server, and syntax-aware unified Git patch synthesis in sub-seconds.
 
 Official Website: https://runfix.live  
 GitHub Repository: https://github.com/Ahmad-glowex/tracelens-ai  
 Operator: Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States)  
-Contact: founder@runfix.live
+General Contact: founder@runfix.live  
+Security Inquiries: security@runfix.live  
 
 ---
 
-## 1. System Overview
+## 1. System Overview & Architecture
 
-RunFix AI is a developer triage platform designed to eliminate engineering hours lost to parsing cryptic terminal traces, unhandled exceptions, type errors, and container crashes. It combines deterministic AST log parsing with frontier reasoning LLMs and sub-second inference clusters to produce verifiable unified Git diffs (`git apply`).
+RunFix AI is a developer triage platform and intelligent developer assistant engineered to eliminate engineering hours lost to parsing cryptic terminal traces, unhandled exceptions, type errors, and container crashes. It combines deterministic AST log parsing with frontier reasoning LLMs and sub-second inference clusters to produce verifiable unified Git diffs (`git apply`).
 
 ### Architectural Highlights
-- **Zero CORS Overhead:** Unified serverless route handler (`app/api/analyze/route.ts`) handles API proxying securely.
-- **Cascading Failover:** Resilient multi-engine failover between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
+- **Zero CORS Overhead:** Unified serverless route handler (`app/api/analyze/route.ts`) handles multi-provider AI proxying securely.
+- **Client-Side Secret & PII Scrubber:** Embedded sanitization engine (`lib/scrubber.ts`) that redacts API keys, credentials, connection strings, and personal info in the client before HTTP transit.
+- **Model Context Protocol (MCP):** Native JSON-RPC 2.0 stdio MCP server (`bin/runfix.mjs mcp`) compatible with Cursor, Windsurf, Claude Desktop, and VS Code.
+- **Command Wrapper & CLI:** Standalone CLI tool (`bin/runfix.mjs`) published to npm as `runfix` (`npx runfix`). Wraps build/test processes and auto-triages nonzero exits.
+- **Autonomous CI Healer:** GitHub Action workflow template (`templates/runfix-action.yml`) that auto-heals failing CI builds by opening pull requests with unified patches.
+- **Multi-Engine Cascading Failover:** Resilient fallback between Anthropic Claude frontier reasoning models, Google Gemini, Groq LPUs, and River AI clusters.
 - **Client-Side Privacy:** Strict zero code telemetry. No logging or persistent caching of user code or crash dumps. BYOK API keys remain in browser `localStorage`.
 - **Silicon Valley Dark UI:** Built with Raycast/Linear design aesthetic using Next.js 14 App Router, TypeScript, and Tailwind CSS.
 
 ---
 
-## 2. API Reference
+## 2. Developer Resources & Platform Routes
 
-### `POST /api/analyze`
+- **Interactive Workbench (`/`):** Full-stack developer workbench with presets for TypeScript, Python, Go, Rust, and Docker.
+- **Developer Documentation (`/docs`):** In-depth guides for CLI, MCP Server, CI Healer, and REST API.
+- **Pricing & Subscription (`/pricing`):** Detailed breakdown of Developer Free, Pro BYOK, and Enterprise Healer tiers.
+- **Enterprise Security & Compliance (`/security`):** Formal security policy, zero data retention guarantee, and threat model.
+- **About & Leadership (`/about`):** Company vision, team background, and technical roadmap (Phases 1-3).
+- **Terms of Service (`/terms`):** Terms of service operated by Raihan LLC.
+- **Privacy Policy (`/privacy`):** Zero telemetry and privacy disclosure.
 
-Analyzes an error traceback or crash log and returns root cause diagnostics and an RFC 5322 unified Git diff patch.
+---
 
-#### Request Headers
-```http
-POST /api/analyze HTTP/1.1
-Host: runfix.live
-Content-Type: application/json
+## 3. Official CLI Tool (`runfix`)
+
+The `runfix` CLI can be executed directly without global installation using `npx runfix`.
+
+### Commands
+```bash
+# Wrap test or build command:
+npx runfix "npm test"
+npx runfix "pytest tests/"
+npx runfix "cargo test"
+
+# Pipe error log:
+cat crash.log | npx runfix
+git log -1 --stat | npx runfix
+
+# Start Model Context Protocol server:
+npx runfix mcp
+
+# Help and Version:
+npx runfix --help
+npx runfix --version
 ```
 
-#### Request Payload
+### Environment Variables
+- `RUNFIX_API_URL`: Target API endpoint (default: `https://runfix.live/api/analyze`).
+- `RUNFIX_API_KEY`: Custom provider key for private inference execution.
+
+---
+
+## 4. Model Context Protocol (MCP) Server
+
+RunFix exposes an official Model Context Protocol (MCP) server operating over `stdio` via JSON-RPC 2.0.
+
+### Exposed Tools
+1. `triage_stacktrace`:
+   - Inputs: `errorLog` (string, required), `provider` (string, optional).
+   - Output: JSON containing `rootCause`, `targetFile`, `diff`, `latency`, `provider`.
+2. `scrub_sensitive_data`:
+   - Inputs: `text` (string, required).
+   - Output: Sanitized text with redacted API keys, tokens, and credentials.
+
+### Configuration for Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json` or `%APPDATA%\Claude\claude_desktop_config.json`):
 ```json
 {
-  "errorLog": "TypeError: Cannot read properties of undefined (reading 'map')\n    at UserProfileList (src/components/UserProfileList.tsx:42:28)",
-  "provider": "anthropic",
-  "model": "claude-frontier",
-  "apiKey": "sk-ant-...",
-  "customUrl": "https://api.river.ai/v1"
+  "mcpServers": {
+    "runfix": {
+      "command": "npx",
+      "args": ["-y", "runfix", "mcp"],
+      "env": {
+        "RUNFIX_API_URL": "https://runfix.live/api/analyze"
+      }
+    }
+  }
 }
 ```
 
-#### Response Payload
+### Configuration for Cursor (`.cursor/mcp.json`):
 ```json
 {
-  "success": true,
-  "data": {
-    "rootCause": "The 'users' collection is asynchronously populated. On initial mount before resolution, 'users' evaluates to undefined. Invoking map causes an unhandled TypeError.",
-    "targetFile": "src/components/UserProfileList.tsx",
-    "diff": "@@ -40,3 +40,3 @@\n-  return users.map(u => <UserCard key={u.id} user={u} />);\n+  return (users ?? []).map(u => <UserCard key={u.id} user={u} />);\n",
-    "latency": 342,
-    "provider": "ANTHROPIC",
-    "model": "claude-frontier"
+  "mcpServers": {
+    "runfix": {
+      "command": "npx",
+      "args": ["-y", "runfix", "mcp"]
+    }
   }
 }
 ```
 
 ---
 
-## 3. Presets & Common Error Triage
+## 5. Client-Side Secret & PII Scrubber
 
-1. **Node.js / TypeScript**: TypeError cannot read properties of undefined (`src/components/UserProfileList.tsx`).
-2. **Python FastAPI / Pydantic**: 422 Unprocessable Entity RFC 5322 email syntax validation (`app/api/v1/endpoints/users.py`).
-3. **Go Panic**: Fatal error concurrent map read and map write (`internal/cache/memory_store.go`).
-4. **Rust Tokio Panic**: Tokio worker bounds check panic index out of bounds (`src/worker/pool.rs`).
-5. **Docker OOM**: Exit Code 137 Linux OOM killer exceeding v8 heap limit (`docker-compose.yml`).
-6. **Next.js Hydration**: Hydration mismatch between server-rendered HTML and client hydration (`app/dashboard/page.tsx`).
+The scrubber engine (`lib/scrubber.ts`) executes synchronously before any network payload is dispatched.
+
+### Redaction Rules
+- **Private Keys:** RSA, EC, OpenSSH, PGP `-----BEGIN ... PRIVATE KEY-----`
+- **OpenAI Keys:** `sk-[live|test|proj][a-zA-Z0-9_-]{24,}`
+- **Anthropic Keys:** `sk-ant-[a-zA-Z0-9_-]{30,}`
+- **Google API Keys:** `AIza[0-9A-Za-z\-_]{35}`
+- **GitHub Tokens:** `ghp_`, `gho_`, `github_pat_`
+- **AWS Keys:** `AKIA...`, `ASIA...`
+- **Database Passwords:** `postgres://`, `mysql://`, `mongodb://`, `redis://` connection URLs
+- **Bearer Tokens:** JWT headers `Bearer eyJ...`
+- **PII:** Email addresses and credential assignments (`api_key=...`, `password=...`)
 
 ---
 
-## 4. Legal, Privacy, and Licensing
+## 6. Autonomous CI Healer (GitHub Action)
 
-- **License:** MIT License (https://opensource.org/licenses/MIT)
-- **Operated by:** Raihan LLC, a Wyoming legal entity, 1910 Thomes Ave, Cheyenne, WY 82001, United States.
-- **Terms of Service:** https://runfix.live/terms
-- **Privacy Policy:** https://runfix.live/privacy
+Workflow file: `templates/runfix-action.yml`
+
+```yaml
+name: "RunFix AI Autonomous Healer"
+
+on:
+  workflow_run:
+    workflows: ["CI", "Test", "Build"]
+    types: [completed]
+
+jobs:
+  auto-heal:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch Failed Step Logs & Triage via RunFix AI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUNFIX_API_URL: "https://runfix.live/api/analyze"
+        run: |
+          gh run view ${{ github.event.workflow_run.id }} --log-failed > failed_trace.log || true
+          if [ -s failed_trace.log ]; then
+            npx runfix < failed_trace.log > runfix_diagnosis.json || true
+          fi
+
+      - name: Apply Patch and Open Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "fix(ci): automated patch synthesized by RunFix AI"
+          title: "🤖 [RunFix AI] Automated Fix for failed CI run #${{ github.event.workflow_run.run_number }}"
+          branch: "runfix/auto-fix-${{ github.event.workflow_run.run_number }}"
+```
+
+---
+
+## 7. Pricing & Commercial Tiers
+
+- **Developer Free ($0/mo forever):**
+  - Interactive Web Workbench & stack trace visualizer
+  - Free tier rate-limited inference (Groq LPUs & community models)
+  - RunFix CLI (`npx runfix`)
+  - Client-side secret & PII scrubber
+  - Community Discord & GitHub support
+
+- **Pro BYOK ($19/seat/mo or $0 BYOK):**
+  - Bring Your Own Key for Anthropic Claude 3.5 Sonnet, Claude 3 Opus, OpenAI, Gemini
+  - Unlimited BYOK queries with 0% markup
+  - Official MCP Server for Cursor, Windsurf, Claude Desktop
+  - Sub-second priority inference queues
+  - 1-click patch downloads & direct terminal apply
+
+- **Enterprise Healer ($99/seat/mo or custom VPC):**
+  - Autonomous GitHub Action CI Healer with auto-generated PRs
+  - Multi-repo healing & Team Workspaces
+  - Formal Zero Data Retention SLA & SOC 2 Type II compliance reports
+  - Dedicated VPC Gateway deployment option
+  - 24/7 dedicated engineering Slack & SLA support
+
+---
+
+## 8. API Specification
+
+- **Method:** `POST /api/analyze`
+- **Request JSON:**
+  - `errorLog` (string, required): Raw stack trace or terminal crash output.
+  - `provider` (string, optional): `anthropic`, `gemini`, `groq`, `river`, `openai`, `custom`.
+  - `model` (string, optional): Specific model identifier.
+  - `apiKey` (string, optional): BYOK key.
+  - `customUrl` (string, optional): Custom endpoint.
+- **Response JSON:**
+  - `success` (boolean): `true` / `false`.
+  - `data.rootCause` (string): Exact 1-2 sentence technical reason.
+  - `data.targetFile` (string): Primary affected file path.
+  - `data.diff` (string): Unified Git diff starting with `@@`.
+  - `data.latency` (number): Latency in ms.
+  - `data.provider` (string): Active provider name.
+  - `data.model` (string): Model name used.
+
+---
+
+## 9. Corporate Information & Governance
+
+- **Entity:** Raihan LLC
+- **Jurisdiction:** State of Wyoming, USA (Registration: 1910 Thomes Ave, Cheyenne, WY 82001)
+- **Founder & CEO:** founder@runfix.live
+- **Security & Privacy Office:** security@runfix.live
+- **Website:** https://runfix.live
+- **Repository:** https://github.com/Ahmad-glowex/tracelens-ai
