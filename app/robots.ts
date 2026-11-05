@@ -28,7 +28,7 @@ export default function robots(): MetadataRoute.Robots {
           "Bytespider",
           "Diffbot",
         ],
-        allow: ["/", "/terms", "/privacy", "/llms.txt", "/llms-full.txt"],
+        allow: ["/", "/security", "/about", "/terms", "/privacy", "/llms.txt", "/llms-full.txt"],
         disallow: ["/api/"],
       },
     ],

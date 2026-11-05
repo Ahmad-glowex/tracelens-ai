@@ -40,6 +40,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
+      url: `${baseUrl}/security`,
+      lastModified: getFileDate("app/security/page.tsx", defaultDate),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: getFileDate("app/about/page.tsx", defaultDate),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: `${baseUrl}/terms`,
       lastModified: getFileDate("app/terms/page.tsx", defaultDate),
       changeFrequency: "monthly",

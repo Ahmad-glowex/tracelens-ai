@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Turn raw stack traces into instant fixes and Git diffs in milliseconds. Full-stack Next.js developer tool.",
+  "bin": {
+    "runfix": "./bin/runfix.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
