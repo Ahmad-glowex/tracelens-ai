@@ -7,34 +7,34 @@
 }
 
 body {
-  background-color: #08080b;
-  color: #f3f4f6;
+  background-color: #08080c;
+  color: #f4f4f5;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-x: hidden;
 }
 
 .bg-grid-pattern {
-  background-size: 40px 40px;
+  background-size: 32px 32px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
 }
 
 .radial-glow {
-  background: radial-gradient(circle 700px at 50% -120px, rgba(16, 185, 129, 0.18), rgba(6, 182, 212, 0.08), transparent 70%);
+  background: radial-gradient(circle 800px at 50% -140px, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.06), transparent 70%);
 }
 
 .glass-card {
-  background: rgba(15, 15, 20, 0.75);
+  background: rgba(12, 12, 17, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 36px -12px rgba(0, 0, 0, 0.6);
 }
 
 /* Hide scrollbar for horizontal mobile pill carousels */
@@ -47,16 +47,19 @@ body {
 }
 
 /* Custom scrollbars */
-pre::-webkit-scrollbar, textarea::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+pre::-webkit-scrollbar, textarea::-webkit-scrollbar, div::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
-pre::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb {
-  background: #2e2e40;
-  border-radius: 4px;
+pre::-webkit-scrollbar-track, textarea::-webkit-scrollbar-track, div::-webkit-scrollbar-track {
+  background: transparent;
 }
-pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover {
-  background: #4b4b66;
+pre::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb, div::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover, div::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
 /* Shimmer animation */

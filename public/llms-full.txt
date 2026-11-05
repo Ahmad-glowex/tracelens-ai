@@ -28,9 +28,8 @@ RunFix AI is a developer triage platform and intelligent developer assistant eng
 
 ## 2. Developer Resources & Platform Routes
 
-- **Interactive Workbench (`/`):** Full-stack developer workbench with presets for TypeScript, Python, Go, Rust, and Docker.
+- **Interactive Workbench (`/`):** Full-stack developer workbench with presets for TypeScript, Python, Go, Rust, and Docker (100% Free Public Beta • No Credit Card Required • Zero Telemetry BYOK).
 - **Developer Documentation (`/docs`):** In-depth guides for CLI, MCP Server, CI Healer, and REST API.
-- **Pricing & Subscription (`/pricing`):** Detailed breakdown of Developer Free, Pro BYOK, and Enterprise Healer tiers.
 - **Enterprise Security & Compliance (`/security`):** Formal security policy, zero data retention guarantee, and threat model.
 - **About & Leadership (`/about`):** Company vision, team background, and technical roadmap (Phases 1-3).
 - **Terms of Service (`/terms`):** Terms of service operated by Raihan LLC.
@@ -176,28 +175,13 @@ jobs:
 
 ---
 
-## 7. Pricing & Commercial Tiers
-
-- **Developer Free ($0/mo forever):**
-  - Interactive Web Workbench & stack trace visualizer
-  - Free tier rate-limited inference (Groq LPUs & community models)
-  - RunFix CLI (`npx runfix`)
-  - Client-side secret & PII scrubber
-  - Community Discord & GitHub support
-
-- **Pro BYOK ($19/seat/mo or $0 BYOK):**
-  - Bring Your Own Key for Anthropic Claude 3.5 Sonnet, Claude 3 Opus, OpenAI, Gemini
-  - Unlimited BYOK queries with 0% markup
-  - Official MCP Server for Cursor, Windsurf, Claude Desktop
-  - Sub-second priority inference queues
-  - 1-click patch downloads & direct terminal apply
-
-- **Enterprise Healer ($99/seat/mo or custom VPC):**
-  - Autonomous GitHub Action CI Healer with auto-generated PRs
-  - Multi-repo healing & Team Workspaces
-  - Formal Zero Data Retention SLA & SOC 2 Type II compliance reports
-  - Dedicated VPC Gateway deployment option
-  - 24/7 dedicated engineering Slack & SLA support
+## 7. Public Beta Access & Zero Paywalls
+ 
+- **100% Free Public Beta:** Full, unthrottled access to developer triage without paywalls.
+- **No Credit Card Required:** Zero checkout flows, zero trial expiration traps.
+- **Zero Telemetry BYOK:** Bring your own API key for Anthropic Claude, OpenAI, or Google Gemini with 0% platform markup and strict zero retention.
+- **MCP Server Included:** Complete Model Context Protocol server for Cursor, Windsurf, and Claude Desktop.
+- **Interactive Web Workbench & CLI:** Full web interface plus standalone `npx runfix` CLI.
 
 ---
 

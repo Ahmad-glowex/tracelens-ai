@@ -205,7 +205,6 @@ export default function SecurityPage() {
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">Workbench</Link>
             <Link href="/docs" className="hover:text-zinc-300 transition-colors">Docs</Link>
-            <Link href="/pricing" className="hover:text-zinc-300 transition-colors">Pricing</Link>
             <Link href="/about" className="hover:text-zinc-300 transition-colors">About</Link>
             <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>

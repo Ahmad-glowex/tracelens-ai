@@ -112,12 +112,6 @@ export default function DocsPage() {
           </Link>
           <div className="flex items-center space-x-4">
             <Link
-              href="/pricing"
-              className="text-xs text-zinc-400 hover:text-white transition-colors hidden sm:inline-block"
-            >
-              Pricing
-            </Link>
-            <Link
               href="/security"
               className="text-xs text-zinc-400 hover:text-white transition-colors hidden sm:inline-block"
             >
@@ -752,9 +746,6 @@ jobs:
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">
               Workbench
-            </Link>
-            <Link href="/pricing" className="hover:text-zinc-300 transition-colors">
-              Pricing
             </Link>
             <Link href="/security" className="hover:text-zinc-300 transition-colors">
               Security

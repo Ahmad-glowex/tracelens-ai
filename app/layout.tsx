@@ -113,7 +113,7 @@ export const metadata: Metadata = {
   },
   other: {
     "ai-content-declaration": "human-authored developer triage workbench with AI patch synthesis",
-    "theme-color": "#090a0f",
+    "theme-color": "#08080c",
   },
 };
 

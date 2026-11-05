@@ -186,9 +186,6 @@ export default function PrivacyPage() {
             <Link href="/docs" className="text-zinc-400 hover:text-white">
               Docs
             </Link>
-            <Link href="/pricing" className="text-zinc-400 hover:text-white">
-              Pricing
-            </Link>
             <Link href="/security" className="text-zinc-400 hover:text-white">
               Security
             </Link>

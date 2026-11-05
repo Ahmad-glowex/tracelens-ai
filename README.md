@@ -116,23 +116,15 @@ flowchart LR
 
 ---
 
-## 💳 Commercial Tiers & Roadmap
+## ⚡ 100% Free Public Beta • Zero Paywalls
 
-| Feature | Developer Free | Pro (BYOK) | Enterprise Healer |
-| :--- | :---: | :---: | :---: |
-| **Price** | **$0 / mo** | **$19 / seat / mo** | **$99 / seat / mo** |
-| Interactive Web Workbench | ✅ | ✅ | ✅ |
-| Community Rate-Limited AI | ✅ | ✅ | ✅ |
-| Client-Side Secret Scrubber | ✅ | ✅ | ✅ |
-| Terminal CLI (`npx runfix`) | ✅ | ✅ | ✅ |
-| MCP Server (Cursor / Claude) | ❌ | ✅ | ✅ |
-| Bring Your Own Key (BYOK) | ❌ | ✅ (0% markup) | ✅ |
-| Autonomous CI Healer Action | ❌ | ❌ | ✅ |
-| Multi-Repo Pull Requests | ❌ | ❌ | ✅ |
-| Zero Data Retention SLA | Best Effort | Standard | Strict Enterprise SLA |
-| Dedicated VPC / Gateway | ❌ | ❌ | Available |
+RunFix AI is currently in **100% Free Public Beta**:
+- **No Credit Card Required:** Open access for all developers.
+- **Zero Telemetry BYOK:** Plug in Anthropic Claude, Google Gemini, OpenAI, or Groq API keys with 0% platform markup.
+- **Full Tooling Included:** Interactive Web Workbench, terminal CLI (`npx runfix`), and Model Context Protocol (`npx runfix mcp`) server for Cursor and Claude Desktop.
+- **Strict Privacy:** Zero data retention, zero disk logging, and client-side secret scrubbing.
 
-Explore complete pricing details at [https://runfix.live/pricing](https://runfix.live/pricing).
+Explore the live workbench at [https://runfix.live](https://runfix.live).
 
 ---
 
@@ -163,7 +155,6 @@ Visit [http://localhost:3000](http://localhost:3000) or check the live productio
 
 - Official Domain: [https://runfix.live](https://runfix.live)
 - Developer Documentation: [https://runfix.live/docs](https://runfix.live/docs)
-- Commercial Pricing: [https://runfix.live/pricing](https://runfix.live/pricing)
 - Security Inquiries: [security@runfix.live](mailto:security@runfix.live)
 - Support & Founder Contact: [founder@runfix.live](mailto:founder@runfix.live)
 - [Terms of Service](https://runfix.live/terms)

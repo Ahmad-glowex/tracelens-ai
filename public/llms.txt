@@ -6,9 +6,8 @@ RunFix AI (accessible at https://runfix.live and open-source on GitHub at https:
 
 ## Primary Resources
 
-- [Interactive Workbench](https://runfix.live): Browser-based developer triage workbench with real-world error presets and sub-second execution.
+- [Interactive Workbench](https://runfix.live): Browser-based developer triage workbench with real-world error presets and sub-second execution (100% Free Public Beta • No Credit Card Required • Zero Telemetry BYOK).
 - [Developer Documentation](https://runfix.live/docs): Comprehensive setup guides for CLI, Model Context Protocol (MCP), CI Action healer, and REST API.
-- [Pricing & Plans](https://runfix.live/pricing): Transparent tiers for Developer Free, Pro BYOK ($19/mo or $0 BYOK), and Enterprise Healer ($99/seat/mo).
 - [Enterprise Security & Compliance](https://runfix.live/security): Architecture documentation for zero code telemetry, client-side secret scrubbing, and zero data retention.
 - [About Us & Vision](https://runfix.live/about): Founder vision, company background, and technical roadmap.
 - [GitHub Repository](https://github.com/Ahmad-glowex/tracelens-ai): Source code, CLI script, MCP server, issue tracker, and CI templates.
