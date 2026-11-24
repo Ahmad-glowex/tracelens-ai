@@ -45,9 +45,9 @@ export const metadata: Metadata = {
     "Rust Bounds Triage",
     "Docker OOM 137",
   ],
-  authors: [{ name: "Raihan LLC", url: "https://runfix.live" }],
-  creator: "Raihan LLC",
-  publisher: "Raihan LLC",
+  authors: [{ name: "RunFix", url: "https://runfix.live" }],
+  creator: "RunFix",
+  publisher: "RunFix",
   robots: {
     index: true,
     follow: true,
@@ -125,19 +125,10 @@ const jsonLd = {
     {
       "@type": "Organization",
       "@id": "https://runfix.live/#organization",
-      name: "Raihan LLC",
-      legalName: "Raihan LLC",
+      name: "RunFix",
       url: "https://runfix.live",
       logo: "https://runfix.live/icon-512.png",
       email: "founder@runfix.live",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: "1910 Thomes Ave",
-        addressLocality: "Cheyenne",
-        addressRegion: "WY",
-        postalCode: "82001",
-        addressCountry: "US",
-      },
       sameAs: ["https://github.com/Ahmad-glowex/tracelens-ai"],
     },
     {

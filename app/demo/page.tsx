@@ -1622,7 +1622,7 @@ export default function HomePage() {
             </div>
             {/* MANDATORY EXACT LEGAL TEXT */}
             <p className="text-xs text-zinc-400 font-sans">
-              &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
+              &copy; 2026 RunFix AI. All rights reserved. Operated by RunFix.
             </p>
           </div>
 

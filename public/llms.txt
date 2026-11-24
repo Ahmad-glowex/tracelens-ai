@@ -12,7 +12,7 @@ RunFix AI (accessible at https://runfix.live and open-source on GitHub at https:
 - [About Us & Vision](https://runfix.live/about): Founder vision, company background, and technical roadmap.
 - [GitHub Repository](https://github.com/Ahmad-glowex/tracelens-ai): Source code, CLI script, MCP server, issue tracker, and CI templates.
 - [API Route](https://runfix.live/api/analyze): High-throughput serverless API route handler for crash analysis.
-- [Terms of Service](https://runfix.live/terms): Legal terms operated by Raihan LLC.
+- [Terms of Service](https://runfix.live/terms): Legal terms operated by RunFix.
 - [Privacy Policy](https://runfix.live/privacy): Zero telemetry architecture, BYOK local storage, and code privacy guarantees.
 - [Full LLM Context](https://runfix.live/llms-full.txt): Complete technical documentation and architecture reference for AI agents.
 
@@ -95,8 +95,8 @@ npm test # or pytest, go test, cargo test
 
 ## Corporate & Operator Information
 
-- Entity Name: Raihan LLC
-- Registered Address: 1910 Thomes Ave, Cheyenne, WY 82001, United States
+- Entity Name: RunFix
+- Registered Address: 
 - Official Contact: founder@runfix.live
 - Security Inquiries: security@runfix.live
 - Official Website: https://runfix.live

@@ -53,6 +53,6 @@ jobs:
             - **Unified Patch**: Synthesized and applied cleanly.
             - **Verification Status**: Ready for review and merge.
 
-            *Powered by [RunFix AI](https://runfix.live) (Raihan LLC).*
+            *Powered by [RunFix AI](https://runfix.live) (RunFix).*
           branch: "runfix/auto-fix-${{ github.event.workflow_run.run_number }}"
           delete-branch: true

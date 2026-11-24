@@ -5,14 +5,14 @@ import { Zap, ArrowLeft } from "lucide-react";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Terms of Service, acceptable use policies, operating entity notices, and legal agreements for RunFix AI operated by Raihan LLC.",
+    "Terms of Service, acceptable use policies, operating entity notices, and legal agreements for RunFix AI operated by RunFix.",
   alternates: {
     canonical: "https://runfix.live/terms",
   },
   openGraph: {
     title: "Terms of Service | RunFix AI",
     description:
-      "Terms of Service, acceptable use policies, and legal agreements for RunFix AI operated by Raihan LLC.",
+      "Terms of Service, acceptable use policies, and legal agreements for RunFix AI operated by RunFix.",
     url: "https://runfix.live/terms",
     siteName: "RunFix AI",
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Terms of Service | RunFix AI",
     description:
-      "Terms of Service, acceptable use policies, and legal agreements for RunFix AI operated by Raihan LLC.",
+      "Terms of Service, acceptable use policies, and legal agreements for RunFix AI operated by RunFix.",
     creator: "@runfix_ai",
     site: "@runfix_ai",
     images: ["https://runfix.live/twitter-image.png"],
@@ -46,7 +46,7 @@ const termsJsonLd = {
       url: "https://runfix.live/terms",
       name: "Terms of Service | RunFix AI",
       description:
-        "Terms of Service, acceptable use policies, operating entity notices, and legal agreements for RunFix AI operated by Raihan LLC.",
+        "Terms of Service, acceptable use policies, operating entity notices, and legal agreements for RunFix AI operated by RunFix.",
       isPartOf: {
         "@id": "https://runfix.live/#website",
       },
@@ -127,7 +127,7 @@ export default function TermsPage() {
               <h2 className="text-lg font-bold text-white mb-2">1. Agreement to Terms</h2>
               <p>
                 By accessing or using the RunFix AI platform, application, command-line interface,
-                or APIs, operated by <strong>Raihan LLC</strong>, you agree to be bound by these
+                or APIs, operated by <strong>RunFix</strong>, you agree to be bound by these
                 Terms of Service. If you do not agree to these Terms, you may not access or use our
                 Services.
               </p>
@@ -136,9 +136,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">2. Operating Entity</h2>
               <p>
-                RunFix AI is proudly developed and operated by <strong>Raihan LLC</strong>, a
-                legal entity organized under the laws of the State of Wyoming, located at{" "}
-                <strong>1910 Thomes Ave, Cheyenne, WY 82001, United States</strong>.
+                RunFix AI is proudly developed and operated by <strong>RunFix</strong>.
               </p>
             </section>
 
@@ -166,7 +164,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">5. Limitation of Liability</h2>
               <p>
-                To the maximum extent permitted by applicable law, in no event shall Raihan LLC, its
+                To the maximum extent permitted by applicable law, in no event shall RunFix, its
                 officers, directors, employees, or affiliates be liable for any indirect, punitive,
                 incidental, special, consequential, or exemplary damages.
               </p>
@@ -175,13 +173,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">6. Contact Information</h2>
               <div className="mt-2 p-4 rounded-xl bg-dark-elevated border border-dark-border font-mono text-xs text-zinc-300">
-                <strong>Raihan LLC</strong>
-                <br />
-                1910 Thomes Ave
-                <br />
-                Cheyenne, WY 82001
-                <br />
-                United States
+                <strong>RunFix</strong>
                 <br />
                 Email: founder@runfix.live
               </div>
@@ -193,8 +185,7 @@ export default function TermsPage() {
       <footer className="border-t border-dark-border/80 bg-dark-bg/95 py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p>
-            &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave,
-            Cheyenne, WY 82001, United States).
+            &copy; 2026 RunFix AI. All rights reserved. Operated by RunFix.
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/" className="text-zinc-400 hover:text-white">
