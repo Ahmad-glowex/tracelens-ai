@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execSync, spawn } from "node:child_process";
 import * as readline from "node:readline";
+import * as fs from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -204,5 +205,196 @@ test("cleanDiffText strips diff/patch code blocks and trims trailing newlines", 
   const wrapped = "```diff\n@@ -1,1 +1,1 @@\n-a\n+b\n```\n\n";
   const cleaned = cleanDiffText(wrapped);
   assert.equal(cleaned, "@@ -1,1 +1,1 @@\n-a\n+b");
+});
+
+// ---- Pivot: verified MCP triage (lib/verify.mjs + triage_failure tool) ----
+
+const { verifyPatch } = require("../lib/verify.js");
+const http = require("node:http");
+const os = require("node:os");
+const path = require("node:path");
+
+function makeTempGitRepo() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "runfix-verify-"));
+  execSync("git init -q", { cwd: dir });
+  execSync("git -c user.email=t@t -c user.name=t commit -q --allow-empty -m init", { cwd: dir });
+  fs.writeFileSync(path.join(dir, "app.js"), "const a = 1\nconsole.log(a)\n");
+  execSync("git add -A", { cwd: dir });
+  execSync("git -c user.email=t@t -c user.name=t commit -q -m app", { cwd: dir });
+  return dir;
+}
+
+test("verifyPatch accepts a well-formed diff that applies to the working tree", async () => {
+  const dir = makeTempGitRepo();
+  try {
+    const diff = [
+      "--- a/app.js",
+      "+++ b/app.js",
+      "@@ -1,2 +1,2 @@",
+      "-const a = 1",
+      "+const a = 2",
+      " console.log(a)",
+    ].join("\n");
+    const result = await verifyPatch(diff, { cwd: dir });
+    assert.equal(result.ok, true, `expected ok, got: ${result.reason}`);
+    assert.equal(result.applies, true);
+    assert.equal(result.parseable, true);
+    assert.equal(result.addCount, 1);
+    assert.equal(result.delCount, 1);
+    assert.equal(result.targetFile, "app.js");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("verifyPatch rejects a diff that does not apply to the working tree", async () => {
+  const dir = makeTempGitRepo();
+  try {
+    const diff = [
+      "--- a/app.js",
+      "+++ b/app.js",
+      "@@ -1,2 +1,2 @@",
+      "-const a = 999",
+      "+const a = 2",
+      " console.log(a)",
+    ].join("\n");
+    const result = await verifyPatch(diff, { cwd: dir });
+    assert.equal(result.ok, false);
+    assert.equal(result.parseable, true);
+    assert.equal(result.applies, false);
+    assert.ok(result.reason.includes("git apply --check failed"));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("verifyPatch rejects unparseable / missing diffs", async () => {
+  const empty = await verifyPatch("", {});
+  assert.equal(empty.ok, false);
+  assert.equal(empty.parseable, false);
+
+  const noHunk = await verifyPatch("just some prose, no diff here", {});
+  assert.equal(noHunk.ok, false);
+  assert.equal(noHunk.parseable, false);
+});
+
+function startMockAnalyzeServer(handler) {
+  return new Promise((resolve) => {
+    const server = http.createServer(handler);
+    server.listen(0, "127.0.0.1", () => resolve({ server, port: server.address().port }));
+  });
+}
+
+function closeMockServer(server) {
+  return new Promise((resolve) => {
+    server.closeAllConnections();
+    server.close(() => resolve());
+  });
+}
+
+function rpc(child, id, method, params) {
+  return new Promise((resolve, reject) => {
+    const rl = readline.createInterface({ input: child.stdout });
+    rl.on("line", (line) => {
+      if (!line.trim()) return;
+      const msg = JSON.parse(line);
+      if (msg.id === id) {
+        rl.close();
+        resolve(msg);
+      }
+    });
+    child.on("exit", () => reject(new Error("MCP server exited before responding")));
+    child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+  });
+}
+
+test("MCP triage_failure returns root cause with patchVerification from a failing command", async () => {
+  const goodDiff = [
+    "--- a/app.js",
+    "+++ b/app.js",
+    "@@ -1,2 +1,2 @@",
+    "-const a = 1",
+    "+const a = 2",
+    " console.log(a)",
+  ].join("\n");
+
+  const { server, port } = await startMockAnalyzeServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      const payload = JSON.parse(body);
+      assert.ok(payload.errorLog.includes("npm test"));
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ success: true, data: { diagnosis: "off-by-one", diff: goodDiff } }));
+    });
+  });
+
+  const dir = makeTempGitRepo();
+  try {
+    const child = spawn("node", ["bin/runfix.mjs", "mcp"], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, RUNFIX_API_URL: `http://127.0.0.1:${port}/api/analyze` },
+    });
+    await rpc(child, 1, "initialize", {});
+    const msg = await rpc(child, 2, "tools/call", {
+      name: "triage_failure",
+      arguments: {
+        command: "npm test",
+        exitCode: 1,
+        output: "npm test failed with exit code 1",
+        workingDirectory: dir,
+      },
+    });
+    const triage = JSON.parse(msg.result.content[0].text);
+    assert.equal(triage.diagnosis, "off-by-one");
+    assert.equal(triage.patchVerification.ok, true);
+    assert.equal(triage.patchVerification.applies, true);
+    assert.equal(triage.patchVerification.targetFile, "app.js");
+    child.kill("SIGKILL");
+  } finally {
+    await closeMockServer(server);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("MCP triage tools answer with a JSON-RPC error when the API fails (no hang)", async () => {
+  const { server, port } = await startMockAnalyzeServer((req, res) => {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ success: false, error: "provider down" }));
+  });
+
+  try {
+    const child = spawn("node", ["bin/runfix.mjs", "mcp"], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, RUNFIX_API_URL: `http://127.0.0.1:${port}/api/analyze` },
+    });
+    await rpc(child, 1, "initialize", {});
+    const msg = await rpc(child, 2, "tools/call", {
+      name: "triage_failure",
+      arguments: { command: "npm test", exitCode: 1, output: "boom" },
+    });
+    assert.ok(msg.error, "expected a JSON-RPC error response");
+    assert.ok(msg.error.message.includes("provider down"));
+    child.kill("SIGKILL");
+  } finally {
+    await closeMockServer(server);
+  }
+});
+
+test("MCP tools/list exposes triage_failure with a command/exitCode/output schema", async () => {
+  const child = spawn("node", ["bin/runfix.mjs", "mcp"], { stdio: ["pipe", "pipe", "pipe"] });
+  try {
+    await rpc(child, 1, "initialize", {});
+    const msg = await rpc(child, 2, "tools/list", {});
+    const tool = msg.result.tools.find((t) => t.name === "triage_failure");
+    assert.ok(tool, "triage_failure tool missing");
+    assert.deepEqual(Object.keys(tool.inputSchema.properties).sort(), [
+      "command", "exitCode", "output", "provider", "workingDirectory",
+    ]);
+    assert.deepEqual(tool.inputSchema.required, ["command", "output"]);
+  } finally {
+    child.kill("SIGKILL");
+  }
 });
 

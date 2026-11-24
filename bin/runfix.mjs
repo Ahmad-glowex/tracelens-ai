@@ -14,6 +14,10 @@
 import { spawn } from "node:child_process";
 import * as readline from "node:readline";
 import * as fs from "node:fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { verifyPatch } = require("../lib/verify.js");
 
 const API_ENDPOINT = process.env.RUNFIX_API_URL || "https://runfix.live/api/analyze";
 const VERSION = "1.1.0";
@@ -78,6 +82,12 @@ async function queryRunFixApi(errorLog, options = {}) {
   return json.data || json;
 }
 
+async function triageWithVerification(errorLog, options = {}) {
+  const result = await queryRunFixApi(errorLog, options);
+  const verification = await verifyPatch(result.diff, { cwd: options.cwd || process.cwd() });
+  return { ...result, patchVerification: verification };
+}
+
 // -------------------------------------------------------------
 // MCP Server Implementation (JSON-RPC 2.0 over stdio)
 // -------------------------------------------------------------
@@ -132,6 +142,22 @@ function startMcpServer() {
               },
             },
             {
+              name: "triage_failure",
+              description:
+                "Triage a command, build, or test failure from inside the coding agent. Call this when a shell command exits non-zero: pass the command, its exit code and its output. Returns root-cause analysis and a unified Git patch verified with 'git apply --check' against the current working tree.",
+              inputSchema: {
+                type: "object",
+                properties: {
+                  command: { type: "string", description: "The shell command that failed, e.g. 'npm test'." },
+                  exitCode: { type: "number", description: "Non-zero exit code of the failed command." },
+                  output: { type: "string", description: "Combined stdout/stderr output of the failed command." },
+                  workingDirectory: { type: "string", description: "Optional working directory used for patch verification (defaults to the server's cwd)." },
+                  provider: { type: "string", description: "Optional LLM provider (groq, anthropic, gemini, river)." },
+                },
+                required: ["command", "output"],
+              },
+            },
+            {
               name: "scrub_sensitive_data",
               description: "Sanitize API keys, tokens, credentials, and passwords from error logs prior to external sending.",
               inputSchema: {
@@ -159,15 +185,56 @@ function startMcpServer() {
         }
 
         if (name === "triage_stacktrace") {
-          const result = await queryRunFixApi(args.errorLog, { provider: args.provider });
-          sendResponse(id, {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          });
+          if (!args.errorLog || typeof args.errorLog !== "string" || !args.errorLog.trim()) {
+            sendResponse(id, {
+              content: [{ type: "text", text: "errorLog is required and must be a non-empty string." }],
+              isError: true,
+            });
+            return;
+          }
+
+          try {
+            const triage = await triageWithVerification(args.errorLog, { provider: args.provider });
+            sendResponse(id, {
+              content: [{ type: "text", text: JSON.stringify(triage, null, 2) }],
+            });
+          } catch (err) {
+            sendError(id, -32603, `RunFix triage failed: ${err.message}`);
+          }
+          return;
+        }
+
+        if (name === "triage_failure") {
+          const command = typeof args.command === "string" ? args.command : null;
+          const output = typeof args.output === "string" ? args.output : "";
+          if (!command || !output.trim()) {
+            sendResponse(id, {
+              content: [{ type: "text", text: "Both 'command' and non-empty 'output' are required." }],
+              isError: true,
+            });
+            return;
+          }
+
+          const exitCode = Number.isFinite(args.exitCode) ? args.exitCode : 1;
+          const cwd = args.workingDirectory || process.cwd();
+          const composed = [
+            `Command failed with exit code ${exitCode}: ${command}`,
+            `Working directory: ${cwd}`,
+            "--- output ---",
+            output,
+          ].join("\n");
+
+          try {
+            const triage = await triageWithVerification(composed, {
+              provider: args.provider,
+              cwd,
+            });
+            sendResponse(id, {
+              content: [{ type: "text", text: JSON.stringify(triage, null, 2) }],
+            });
+          } catch (err) {
+            sendError(id, -32603, `RunFix triage failed: ${err.message}`);
+          }
           return;
         }
 

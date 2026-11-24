@@ -72,6 +72,16 @@ Add to your **Claude Desktop** (`claude_desktop_config.json`) or **Cursor** (`.c
 }
 ```
 
+**Agent-native triage (`triage_failure`):** when a command, build, or test run fails
+inside your coding agent, call the `triage_failure` tool with the command, its exit
+code and its output. RunFix returns root-cause analysis plus a unified diff that has
+been verified with `git apply --check` against the caller's working tree — the agent
+never sees a patch that does not apply. Every triage response carries a
+`patchVerification` block (`{ ok, parseable, applies, addCount, delCount, targetFile }`).
+
+Read `docs/pivot-plan.md` for why RunFix is moving from the website into the
+coding-agent workflow.
+
 ### 4. Autonomous GitHub Action Healer
 Drop `templates/runfix-action.yml` into `.github/workflows/runfix.yml` in your repository. When your CI workflow fails, RunFix automatically fetches the failed log, generates a unified diff, and submits a pull request for review.
 
