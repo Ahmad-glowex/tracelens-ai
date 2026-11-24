@@ -44,7 +44,7 @@ export default function Footer() {
           <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--muted)]">
             An MCP server for coding agents. Your agent finds the root cause; RunFix verifies the patch before it reaches your working tree.
           </p>
-          <p className="mt-4 font-mono text-xs text-[var(--muted)]">Raihan LLC · founder@runfix.live</p>
+          <p className="mt-4 font-mono text-xs text-[var(--muted)]">RunFix · founder@runfix.live</p>
         </div>
         {columns.map((col) => (
           <nav key={col.title} aria-label={col.title}>
@@ -63,7 +63,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-[var(--border)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>© {new Date().getFullYear()} Raihan LLC. MIT licensed.</span>
+          <span>© {new Date().getFullYear()} RunFix. MIT licensed.</span>
           <span className="font-mono">git apply --check verified, every time</span>
         </div>
       </div>

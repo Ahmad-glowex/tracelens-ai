@@ -67,7 +67,7 @@ const docsJsonLd = {
       inLanguage: "en-US",
       author: {
         "@type": "Organization",
-        name: "RunFix AI (Raihan LLC)",
+        name: "RunFix AI",
         url: "https://runfix.live",
       },
     },
@@ -624,7 +624,7 @@ jobs:
             - **Unified Patch**: Synthesized and applied cleanly.
             - **Verification Status**: Ready for review and merge.
 
-            *Powered by [RunFix AI](https://runfix.live) (Raihan LLC).*
+            *Powered by [RunFix AI](https://runfix.live) (RunFix).*
           branch: "runfix/auto-fix-\${{ github.event.workflow_run.run_number }}"
           delete-branch: true`}
             />
@@ -742,7 +742,7 @@ jobs:
       {/* Footer */}
       <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-8 mt-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <div>© {new Date().getFullYear()} RunFix AI (Raihan LLC). All rights reserved.</div>
+          <div>© {new Date().getFullYear()} RunFix AI. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">
               Workbench

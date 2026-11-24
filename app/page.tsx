@@ -302,7 +302,7 @@ export default function Home() {
                 About RunFix
               </h2>
               <p className="mt-4 leading-7 text-[var(--muted)]">
-                RunFix is built by Raihan LLC on the idea that agents should not guess at failures.
+                RunFix is built by RunFix on the idea that agents should not guess at failures.
                 It started as a browser workbench that turned stack traces into verified git patches,
                 and is now an MCP server that plugs the same engine directly into the tools where the
                 failures happen. Everything that leaves your machine is scrubbed first, and nothing is

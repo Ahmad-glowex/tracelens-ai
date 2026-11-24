@@ -4,7 +4,7 @@
 
 Official Website: https://runfix.live  
 GitHub Repository: https://github.com/Ahmad-glowex/tracelens-ai  
-Operator: Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States)  
+Operator: RunFix  
 General Contact: founder@runfix.live  
 Security Inquiries: security@runfix.live  
 
@@ -32,7 +32,7 @@ RunFix AI is a developer triage platform and intelligent developer assistant eng
 - **Developer Documentation (`/docs`):** In-depth guides for CLI, MCP Server, CI Healer, and REST API.
 - **Enterprise Security & Compliance (`/security`):** Formal security policy, zero data retention guarantee, and threat model.
 - **About & Leadership (`/about`):** Company vision, team background, and technical roadmap (Phases 1-3).
-- **Terms of Service (`/terms`):** Terms of service operated by Raihan LLC.
+- **Terms of Service (`/terms`):** Terms of service operated by RunFix.
 - **Privacy Policy (`/privacy`):** Zero telemetry and privacy disclosure.
 
 ---
@@ -207,8 +207,8 @@ jobs:
 
 ## 9. Corporate Information & Governance
 
-- **Entity:** Raihan LLC
-- **Jurisdiction:** State of Wyoming, USA (Registration: 1910 Thomes Ave, Cheyenne, WY 82001)
+- **Entity:** RunFix
+- **Jurisdiction:** United States
 - **Founder & CEO:** founder@runfix.live
 - **Security & Privacy Office:** security@runfix.live
 - **Website:** https://runfix.live

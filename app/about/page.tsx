@@ -3,16 +3,16 @@ import Link from "next/link";
 import { Zap, ArrowLeft, Terminal, Bot, GitPullRequest, ShieldCheck, HeartHandshake } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "About Us & Vision | Raihan LLC",
+  title: "About Us & Vision | RunFix",
   description:
-    "The mission, leadership, and architectural roadmap of RunFix AI operated by Raihan LLC. Building the first autonomous sandboxed debugging engine for DevOps.",
+    "The mission, leadership, and architectural roadmap of RunFix AI operated by RunFix. Building the first autonomous sandboxed debugging engine for DevOps.",
   alternates: {
     canonical: "https://runfix.live/about",
   },
   openGraph: {
     title: "About Us & Vision | RunFix AI",
     description:
-      "The mission, leadership, and architectural roadmap of RunFix AI operated by Raihan LLC.",
+      "The mission, leadership, and architectural roadmap of RunFix AI operated by RunFix.",
     url: "https://runfix.live/about",
     siteName: "RunFix AI",
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "About Us & Vision | RunFix AI",
     description:
-      "The mission, leadership, and architectural roadmap of RunFix AI operated by Raihan LLC.",
+      "The mission, leadership, and architectural roadmap of RunFix AI operated by RunFix.",
     creator: "@runfix_ai",
     site: "@runfix_ai",
     images: ["https://runfix.live/twitter-image.png"],
@@ -46,7 +46,7 @@ const aboutJsonLd = {
       url: "https://runfix.live/about",
       name: "About Us & Vision | RunFix AI",
       description:
-        "The mission, leadership, and architectural roadmap of RunFix AI operated by Raihan LLC.",
+        "The mission, leadership, and architectural roadmap of RunFix AI operated by RunFix.",
       isPartOf: {
         "@id": "https://runfix.live/#website",
       },
@@ -108,7 +108,7 @@ export default function AboutPage() {
         <div className="mb-12">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mb-4">
             <HeartHandshake className="w-3.5 h-3.5" />
-            <span>RAIHAN LLC MISSION</span>
+            <span>RUNFIX MISSION</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
             Eliminating Debugging Friction with Autonomous Sandboxed Healing
@@ -176,7 +176,7 @@ export default function AboutPage() {
         <div className="border-t border-zinc-800/80 pt-8 text-sm text-zinc-400 leading-relaxed">
           <h2 className="text-lg font-bold text-white mb-2">Company & Stewardship</h2>
           <p className="mb-4">
-            RunFix AI is developed and operated by <strong>Raihan LLC</strong>, dedicated to developer tooling, high-throughput inference orchestration, and automated software repair.
+            RunFix AI is developed and operated by <strong>RunFix</strong>, dedicated to developer tooling, high-throughput inference orchestration, and automated software repair.
           </p>
           <p>
             For enterprise partnerships, security reviews, or technical inquiries, reach out directly at{" "}
@@ -190,7 +190,7 @@ export default function AboutPage() {
       {/* Footer */}
       <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <div>© {new Date().getFullYear()} RunFix AI (Raihan LLC). All rights reserved.</div>
+          <div>© {new Date().getFullYear()} RunFix AI. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">Workbench</Link>
             <Link href="/docs" className="hover:text-zinc-300 transition-colors">Docs</Link>

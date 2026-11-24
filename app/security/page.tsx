@@ -5,7 +5,7 @@ import { Shield, Zap, ArrowLeft, Lock, EyeOff, Server, Key, CheckCircle2 } from 
 export const metadata: Metadata = {
   title: "Enterprise Security & Zero Data Retention",
   description:
-    "Enterprise security architecture, zero code telemetry, client-side secret scrubbing, and BYOK governance for RunFix AI operated by Raihan LLC.",
+    "Enterprise security architecture, zero code telemetry, client-side secret scrubbing, and BYOK governance for RunFix AI operated by RunFix.",
   alternates: {
     canonical: "https://runfix.live/security",
   },
@@ -189,7 +189,7 @@ export default function SecurityPage() {
               <span>3. Enterprise & Compliance Inquiries</span>
             </h3>
             <p className="leading-relaxed text-zinc-400">
-              For enterprise VPC deployments, dedicated on-premise inference gateways, or custom BAA/DPA agreements, please contact Raihan LLC directly at{" "}
+              For enterprise VPC deployments, dedicated on-premise inference gateways, or custom BAA/DPA agreements, please contact RunFix directly at{" "}
               <a href="mailto:security@runfix.live" className="text-cyan-400 hover:underline">
                 security@runfix.live
               </a>.
@@ -201,7 +201,7 @@ export default function SecurityPage() {
       {/* Footer */}
       <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <div>© {new Date().getFullYear()} RunFix AI (Raihan LLC). All rights reserved.</div>
+          <div>© {new Date().getFullYear()} RunFix AI. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-6">
             <Link href="/" className="hover:text-zinc-300 transition-colors">Workbench</Link>
             <Link href="/docs" className="hover:text-zinc-300 transition-colors">Docs</Link>

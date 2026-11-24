@@ -161,7 +161,7 @@ Visit [http://localhost:3000](http://localhost:3000) or check the live productio
 
 ## 📄 Legal & Operator Notice
 
-© 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave, Cheyenne, WY 82001, United States).
+© 2026 RunFix AI. All rights reserved. Operated by RunFix.
 
 - Official Domain: [https://runfix.live](https://runfix.live)
 - Developer Documentation: [https://runfix.live/docs](https://runfix.live/docs)

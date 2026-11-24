@@ -5,14 +5,14 @@ import { Zap, ArrowLeft } from "lucide-react";
 export const metadata: Metadata = {
   title: "Privacy Policy & Zero Telemetry",
   description:
-    "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC. Understand our client-side BYOK security model and data handling.",
+    "Privacy Policy and zero code telemetry governance for RunFix AI operated by RunFix. Understand our client-side BYOK security model and data handling.",
   alternates: {
     canonical: "https://runfix.live/privacy",
   },
   openGraph: {
     title: "Privacy Policy & Zero Telemetry | RunFix AI",
     description:
-      "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+      "Privacy Policy and zero code telemetry governance for RunFix AI operated by RunFix.",
     url: "https://runfix.live/privacy",
     siteName: "RunFix AI",
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Privacy Policy & Zero Telemetry | RunFix AI",
     description:
-      "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+      "Privacy Policy and zero code telemetry governance for RunFix AI operated by RunFix.",
     creator: "@runfix_ai",
     site: "@runfix_ai",
     images: ["https://runfix.live/twitter-image.png"],
@@ -46,7 +46,7 @@ const privacyJsonLd = {
       url: "https://runfix.live/privacy",
       name: "Privacy Policy & Zero Telemetry | RunFix AI",
       description:
-        "Privacy Policy and zero code telemetry governance for RunFix AI operated by Raihan LLC.",
+        "Privacy Policy and zero code telemetry governance for RunFix AI operated by RunFix.",
       isPartOf: {
         "@id": "https://runfix.live/#website",
       },
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
                 1. Overview & Zero Telemetry
               </h2>
               <p>
-                At RunFix AI, operated by <strong>Raihan LLC</strong>, we are developers building
+                At RunFix AI, operated by <strong>RunFix</strong>, we are developers building
                 for developers. We recognize that error logs and stack traces often contain sensitive
                 directory paths and code snippets. Our core architectural philosophy is built on
                 strict privacy and zero centralized code telemetry.
@@ -156,15 +156,9 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-lg font-bold text-white mb-2">3. Operator Contact</h2>
               <div className="mt-2 p-4 rounded-xl bg-dark-elevated border border-dark-border font-mono text-xs text-zinc-300">
-                <strong>Raihan LLC</strong>
+                <strong>RunFix</strong>
                 <br />
                 Attn: Privacy & Data Protection
-                <br />
-                1910 Thomes Ave
-                <br />
-                Cheyenne, WY 82001
-                <br />
-                United States
                 <br />
                 Email: founder@runfix.live
               </div>
@@ -176,8 +170,7 @@ export default function PrivacyPage() {
       <footer className="border-t border-dark-border/80 bg-dark-bg/95 py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p>
-            &copy; 2026 RunFix AI. All rights reserved. Operated by Raihan LLC (1910 Thomes Ave,
-            Cheyenne, WY 82001, United States).
+            &copy; 2026 RunFix AI. All rights reserved. Operated by RunFix.
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/" className="text-zinc-400 hover:text-white">
