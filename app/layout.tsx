@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import SiteNav from "@/components/SiteNav";
+import Footer from "@/components/Footer";
 
 const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -15,12 +17,12 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://runfix.live"),
   title: {
-    default: "RunFix AI — Instant Error Triage & Automated Git Patches",
-    template: "%s | RunFix AI",
+    default: "RunFix — The MCP server that fixes your agent's failures",
+    template: "%s | RunFix",
   },
   description:
-    "Developer platform for instant runtime crash triage. Converts cryptic terminal traces, unhandled exceptions, and container crashes into clean, git-apply compatible unified diff patches in sub-seconds.",
-  applicationName: "RunFix AI",
+    "RunFix is an MCP server for coding agents. When a build, test or command fails, your agent calls triage_failure and gets the root cause plus a patch verified with git apply --check — before it touches your working tree.",
+  applicationName: "RunFix",
   category: "Developer Tools",
   keywords: [
     "RunFix AI",
@@ -174,7 +176,9 @@ export default function RootLayout({
       >
         <div className="fixed inset-0 bg-grid-pattern pointer-events-none z-0" />
         <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[600px] radial-glow pointer-events-none z-0" />
-        {children}
+        <SiteNav />
+        <main className="relative z-10">{children}</main>
+        <Footer />
       </body>
     </html>
   );
