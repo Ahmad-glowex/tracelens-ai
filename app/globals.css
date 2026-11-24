@@ -4,37 +4,45 @@
 
 :root {
   color-scheme: dark;
+
+  /* Dark Instrument tokens */
+  --bg: #0B0F14;
+  --surface: #0F1620;
+  --surface-2: #131C28;
+  --text: #E6EDF3;
+  --muted: #8B98A5;
+  --accent: #4ADE80;
+  --border: #1E2A38;
 }
 
 body {
-  background-color: #08080c;
-  color: #f4f4f5;
+  background-color: var(--bg);
+  color: var(--text);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-x: hidden;
 }
 
 .bg-grid-pattern {
   background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgba(230, 237, 243, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(230, 237, 243, 0.025) 1px, transparent 1px);
 }
 
 .radial-glow {
-  background: radial-gradient(circle 800px at 50% -140px, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.06), transparent 70%);
+  background: radial-gradient(circle 800px at 50% -140px, rgba(74, 222, 128, 0.09), transparent 70%);
 }
 
 .glass-card {
-  background: rgba(12, 12, 17, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 36px -12px rgba(0, 0, 0, 0.6);
+  border-color: rgba(74, 222, 128, 0.35);
+  box-shadow: 0 12px 36px -16px rgba(0, 0, 0, 0.7);
 }
 
 /* Hide scrollbar for horizontal mobile pill carousels */
@@ -58,41 +66,29 @@ pre::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb, div::-webkit-sc
   background: #27272a;
   border-radius: 9999px;
 }
-pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover, div::-webkit-scrollbar-thumb:hover {
+pre::-webkit-scrollbar-thumb:hover, textarea::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
-}
-
-/* Shimmer animation */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3s infinite linear;
 }
 
 /* Smooth pulse glow */
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.25);
+    box-shadow: 0 0 15px -3px rgba(74, 222, 128, 0.2);
   }
   50% {
-    box-shadow: 0 0 25px 2px rgba(16, 185, 129, 0.45);
+    box-shadow: 0 0 25px 2px rgba(74, 222, 128, 0.38);
   }
 }
 
 .glow-emerald {
   animation: glow-pulse 3s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-emerald {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }
